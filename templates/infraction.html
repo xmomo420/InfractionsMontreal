@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container">
+    <h1>Infraction Montreal</h1>
+    {% if infractions %}
+    <p>Voici les infractions de la ville de Montréal</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Poursuite_ID</th>
+                <th scope="col">Business_ID</th>
+                <th scope="col">Date</th>
+                <th scope="col">Description</th>
+                <th scope="col">Adresse</th>
+                <th scope="col">Date_jugement</th>
+                <th scope="col">Etablissement</th>
+                <th scope="col">Montant</th>
+                <th scope="col">Proprietaire</th>
+                <th scope="col">Ville</th>
+                <th scope="col">Statut</th>
+                <th scope="col">Date_statut</th>
+                <th scope="col">Categorie</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for infraction in infractions %}
+            <tr>
+                <td>{{ infraction.id_poursuite }}</td>
+                <td>{{ infraction.id_business }}</td>
+                <td>{{ infraction.date }}</td>
+                <td>{{ infraction.description }}</td>
+                <td>{{ infraction.adresse }}</td>
+                <td>{{ infraction.date_jugement }}</td>
+                <td>{{ infraction.etablissement }}</td>
+                <td>{{ infraction.montant }}</td>
+                <td>{{ infraction.proprietaire }}</td>
+                <td>{{ infraction.ville }}</td>
+                <td>{{ infraction.statut }}</td>
+                <td>{{ infraction.date_statut }}</td>
+                <td>{{ infraction.categorie }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucune infraction trouvée</p>
+    {% endif %}
+</div>
+
+{% endblock %}

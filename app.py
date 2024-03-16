@@ -1,4 +1,4 @@
-from flask import Flask, g
+from flask import Flask, g, redirect, render_template, request, url_for
 import requests
 from database import Database
 from infractions import Infractions
@@ -6,8 +6,7 @@ from datetime import datetime
 from io import StringIO
 import csv
 
-app = Flask(__name__)
-
+app = Flask(__name__, static_url_path="", static_folder="static")
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -45,5 +44,14 @@ def index():
         get_db().creer_infraction(infraction)
     return 'La base de données a été mise à jour avec succès!', 201
 
+
+@app.route('/api/recherche-infraction', methods=['POST'])
+def recherche():
+    nomEtablissement = request.form['nomEtablissement']
+    proprietaire = request.form['proprietaire']
+    rue = request.form['rue']
+
+    infractions = get_db().recherche_infraction(nomEtablissement, proprietaire, rue)
+    return render_template('infraction.html', infractions=infractions), 200
 
 
