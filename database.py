@@ -22,7 +22,7 @@ class Database:
 
     def recherche_infraction(self, nomEtablissement, proprietaire, rue):
         cursor = self.get_connection().cursor()
-        cursor.execute("SELECT * FROM infractions WHERE etablissement LIKE ? OR proprietaire LIKE ? OR adresse LIKE ?", ('%'+nomEtablissement+'%', '%'+proprietaire+'%', '%'+rue+'%',))
+        cursor.execute("SELECT * FROM infractions WHERE etablissement LIKE ? AND proprietaire LIKE ? AND adresse LIKE ?", ('%'+nomEtablissement+'%', '%'+proprietaire+'%', '%'+rue+'%',))
         infractions_data = cursor.fetchall()
-        infraction = [Infractions(*infraction) for infraction in infractions_data]
-        return infraction
+        infractions = [Infractions(*infraction) for infraction in infractions_data]
+        return infractions

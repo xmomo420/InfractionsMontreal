@@ -44,7 +44,7 @@ def index():
         get_db().creer_infraction(infraction)
     return 'La base de données a été mise à jour avec succès!', 201
 
-
+# Cette route permet de rechercher les infractions dans la base de donnees selon le nom de l'etablissement, le proprietaire et la rue. Ensuit elle retourne les resultats dans un tableau dans une page web A2
 @app.route('/api/recherche-infraction', methods=['POST'])
 def recherche():
     nomEtablissement = request.form['nomEtablissement']
@@ -53,5 +53,3 @@ def recherche():
 
     infractions = get_db().recherche_infraction(nomEtablissement, proprietaire, rue)
     return render_template('infraction.html', infractions=infractions), 200
-
-
