@@ -2,11 +2,14 @@ from flask import Flask, g, redirect, render_template, request, url_for
 import requests
 from database import Database
 from infractions import Infractions
+from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from io import StringIO
 import csv
 
 app = Flask(__name__, static_url_path="", static_folder="static")
+
+
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -42,14 +45,26 @@ def index():
         infraction = Infractions(None, row['id_poursuite'], row['business_id'], date, row['description'], row['adresse'], date_jugement,
                                     row['etablissement'], row['montant'], row['proprietaire'], row['ville'], row['statut'], date_statut, row['categorie'])
         get_db().creer_infraction(infraction)
+        print('Insertion de l\'infraction')
     return 'La base de données a été mise à jour avec succès!', 201
+
+
+# Ce script permet de lancer le scheduler qui permet de mettre a jour la base de donnees chaque jour a minuit A3
+scheduler = BackgroundScheduler()
+scheduler.add_job(index, 'cron', hour=00, minute=00, second=00)
+scheduler.start()
+print("Scheduler started...")
+
+
 
 # Cette route permet de rechercher les infractions dans la base de donnees selon le nom de l'etablissement, le proprietaire et la rue. Ensuit elle retourne les resultats dans un tableau dans une page web A2
 @app.route('/api/recherche-infraction', methods=['POST'])
 def recherche():
-    nomEtablissement = request.form['nomEtablissement']
+    nom_etablissement = request.form['nomEtablissement']
     proprietaire = request.form['proprietaire']
     rue = request.form['rue']
 
-    infractions = get_db().recherche_infraction(nomEtablissement, proprietaire, rue)
+    infractions = get_db().recherche_infraction(nom_etablissement, proprietaire, rue)
     return render_template('infraction.html', infractions=infractions), 200
+
+
