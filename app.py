@@ -68,3 +68,10 @@ def recherche():
     return render_template('infraction.html', infractions=infractions), 200
 
 
+# Cette route permet de recuperer les infractions dans la base de donnees selon une periode donnee. Elle retourne les resultats dans un tableau dans une page web A4
+@app.route('/api/contraventions')
+def contraventions():
+    date_debut = request.args.get('du')
+    date_fin = request.args.get('au')
+    infractions = get_db().get_infraction_by_date(date_debut, date_fin)
+    return render_template('infraction.html', infractions=infractions), 200

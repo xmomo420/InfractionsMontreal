@@ -26,3 +26,10 @@ class Database:
         infractions_data = cursor.fetchall()
         infractions = [Infractions(*infraction) for infraction in infractions_data]
         return infractions
+
+    def get_infraction_by_date(self, date_debut, date_fin):
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT * FROM infractions WHERE date BETWEEN ? AND ?", (date_debut, date_fin,))
+        infractions_data = cursor.fetchall()
+        infractions = [Infractions(*infraction) for infraction in infractions_data]
+        return infractions
