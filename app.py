@@ -25,6 +25,11 @@ def close_connection(exception):
         db.disconnect()
 
 
+@app.route('/')
+def home():
+    if request.method == 'GET':
+        return render_template('acceuil.html'), 200
+
 # Cette route permet de recuperer les donnees du fichier csv et les insere dans la base de donnees  A1
 @app.route('/api/infractions-csv-to-db')
 def index():

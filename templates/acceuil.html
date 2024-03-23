@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<div class="container">
+        <h3 class="text-center">Recherche de contraventions</h3>
+        <div class="mb-3">
+            <label for="date-debut">Du: </label>
+            <input type="date" class="form-control" id="date-debut" name="dateDebut" required>
+            <label for="date-fin">Au: </label>
+            <input type="date" class="form-control" id="date-fin" name="dateFin" required>
+            <button id="button-recherche" class="btn btn-outline-primary mt-3">Rechercher</button>
+        </div>
+
+    <div id="resultat-recherche"></div>
+
+
+</div>
+
+
+
+{% endblock %}
