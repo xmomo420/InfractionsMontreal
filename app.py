@@ -1,4 +1,4 @@
-from flask import Flask, g, redirect, render_template, request, url_for
+from flask import Flask, g, redirect, render_template, request, url_for, jsonify
 import requests
 from database import Database
 from infractions import Infractions
@@ -27,8 +27,7 @@ def close_connection(exception):
 
 @app.route('/')
 def home():
-    if request.method == 'GET':
-        return render_template('acceuil.html'), 200
+    return render_template('acceuil.html'), 200
 
 # Cette route permet de recuperer les donnees du fichier csv et les insere dans la base de donnees  A1
 @app.route('/api/infractions-csv-to-db')
@@ -73,10 +72,11 @@ def recherche():
     return render_template('infraction.html', infractions=infractions), 200
 
 
-# Cette route permet de recuperer les infractions dans la base de donnees selon une periode donnee. Elle retourne les resultats dans un tableau dans une page web A4
+# Cette route permet de recuperer les infractions selon une periode donnee et retourne les resultats en format json A4
 @app.route('/api/contraventions')
 def contraventions():
     date_debut = request.args.get('du')
     date_fin = request.args.get('au')
     infractions = get_db().get_infraction_by_date(date_debut, date_fin)
-    return render_template('infraction.html', infractions=infractions), 200
+    infractions_json = [infraction.__dict__ for infraction in infractions]
+    return jsonify(infractions_json), 200
