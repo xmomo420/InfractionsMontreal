@@ -80,3 +80,15 @@ def contraventions():
     infractions = get_db().get_infraction_by_date(date_debut, date_fin)
     infractions_json = [infraction.__dict__ for infraction in infractions]
     return jsonify(infractions_json), 200
+
+
+@app.route('/etablissements')
+def etablissements():
+    infractions = get_db().get_infractions()
+    return render_template('etablissements.html', infractions=infractions), 200
+
+@app.route('/api/etablissement/<int:id_business>')
+def etablissement(id_business):
+    infractions = get_db().get_infraction_by_id_business(id_business)
+    infractions_json = [infraction.__dict__ for infraction in infractions]
+    return jsonify(infractions_json), 200
