@@ -1,0 +1,67 @@
+#%RAML 1.0
+title: Infractions Montréal
+baseUri: http://127.0.0.1:5000
+version: 1
+
+types:
+  Utilisateur:
+    type: object
+    properties:
+      prenom: {type: string}
+      nom: {type: string}
+      courriel: {type: string}
+      confirmation_courriel: {type: string}
+      mot_de_passe: {type: string}
+      confirmation_mot_de_passe: {type: string}
+      etablissements:
+        type: array
+        items: {type: string}
+    additionalProperties: false
+    example: |
+      {
+        "prenom": "Jeam",
+        "nom": "Mathieu",
+        "courriel": "jean.mathieu69@hotmail.com",
+        "confirmation_courriel": "jean.mathieu69@hotmail.com",
+        "mot_de_passe": "pouletGrille69!",
+        "etablissements": ["Yumi Burger", "Pizza St-Laurent", "Harveys"]
+      }
+
+/api/inscription:
+  post:
+    description: L'utilisateur se créé un compte
+    body:
+      application/json:
+        type: Utilisateur
+    responses:
+      201:
+        body:
+          application/json:
+            example: |
+              {
+                "message": "L'utilisateur Aaron Osorio a été ajouté avec succès."
+              }
+      400:champs_manquant:
+        description: Champ manquant, tous les champs doivent être remplis et respecter les critères
+        body:
+          application/json:
+            example: |
+              {
+                "'date_naissance' is a required property"
+              }
+      400:mauvais type:
+        description: Champ du mauvais type
+        body:
+          application/json:
+            example: |
+              {
+                "12 is not of type 'string'"
+              }
+      500:
+        description: Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Une erreur interne s'est produite."
+

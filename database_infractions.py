@@ -2,7 +2,7 @@ import sqlite3
 from infractions import Infractions
 
 
-class Database:
+class DatabaseInfractions:
     def __init__(self):
         self.connection = None
 
