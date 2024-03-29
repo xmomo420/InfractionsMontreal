@@ -2,20 +2,36 @@
 {% block content %}
 
 <div class="container">
-        <h3 class="text-center">Recherche de contraventions</h3>
-        <div class="mb-3">
-            <label for="date-debut">Du: </label>
-            <input type="date" class="form-control" id="date-debut" name="dateDebut" required>
-            <label for="date-fin">Au: </label>
-            <input type="date" class="form-control" id="date-fin" name="dateFin" required>
-            <button id="button-recherche" class="btn btn-outline-primary mt-3">Rechercher</button>
+    <div class="row">
+        <div class="col-md-6">
+            <h3 class="text-center">Recherche de contraventions par date</h3>
+            <div class="mb-3">
+                <label for="date-debut">Du: </label>
+                <input type="date" class="form-control" id="date-debut" name="dateDebut" required>
+                <label for="date-fin">Au: </label>
+                <input type="date" class="form-control" id="date-fin" name="dateFin" required>
+                <button id="button-recherche" class="btn btn-outline-primary mt-3">Rechercher</button>
+            </div>
+            <div id="resultat-recherche"></div>
         </div>
 
-    <div id="resultat-recherche"></div>
-
-
+        <div class="col-md-6">
+            <h3 class="text-center">Recherche par nom d'établissements</h3>
+            <select class="form-select" id="champ-etablissements" aria-label="Default select example">
+                {% if infractions %}
+                <option value="" selected>Liste etablissements</option>
+                {% for infraction in infractions %}
+                <option value="{{infraction.id_business}}">
+                    {{ infraction.etablissement }} ({{infraction.id_business}})
+                </option>
+                {% endfor %}
+                {% else %}
+                <option>Aucune infraction trouvée</option>
+                {% endif %}
+            </select>
+            <div id="tableau-etablissement"></div>
+        </div>
+    </div>
 </div>
-
-
 
 {% endblock %}
