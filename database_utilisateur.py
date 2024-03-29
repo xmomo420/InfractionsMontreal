@@ -36,3 +36,34 @@ class DatabaseUtilisateur:
         for courriel in courriels:
             liste_courriels.append(courriel[0])
         return liste_courriels
+
+    def creer_session(self, _id, id_utilisateur):
+        connection = self.get_connection()
+        connection.execute("INSERT INTO Sessions "
+                           "(id, id_utilisateur) VALUES (?, ?)",
+                           (_id, id_utilisateur))
+        connection.commit()
+
+    def supprimer_session(self, _id):
+        connection = self.get_connection()
+        connection.execute("DELETE FROM Sessions WHERE id = ?",
+                           (_id,))
+        connection.commit()
+
+    def get_session(self, _id):
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT * FROM Sessions WHERE id = ?",
+                       (_id,))
+        donnee = cursor.fetchone()
+        return donnee[0]
+
+    def get_utilisateur(self, _id) -> Utilisateur:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT * FROM Utilisateurs WHERE id == ?", (_id,))
+        donnee = cursor.fetchone()
+        liste_etablissements = json.loads(donnee[7])
+        return Utilisateur(_id=donnee[0], prenom=donnee[1], nom=donnee[2], courriel=donnee[3], photo=donnee[6],
+                           etablissements=liste_etablissements, salt=None, _hash=None)
+
+
+

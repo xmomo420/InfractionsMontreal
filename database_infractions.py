@@ -17,7 +17,12 @@ class DatabaseInfractions:
 
     def creer_infraction(self, infraction):
         cursor = self.get_connection().cursor()
-        cursor.execute("INSERT INTO infractions (id_poursuite, id_business, date, description, adresse, date_jugement, etablissement, montant, proprietaire, ville, statut, date_statut, categorie) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (infraction.id_poursuite, infraction.id_business, infraction.date, infraction.description, infraction.adresse, infraction.date_jugement, infraction.etablissement, infraction.montant, infraction.proprietaire, infraction.ville, infraction.statut, infraction.date_statut, infraction.categorie))
+        cursor.execute(
+            "INSERT INTO infractions (id_poursuite, id_business, date, description, adresse, date_jugement, etablissement, montant, proprietaire, ville, statut, date_statut, categorie) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (infraction.id_poursuite, infraction.id_business, infraction.date, infraction.description,
+             infraction.adresse, infraction.date_jugement, infraction.etablissement, infraction.montant,
+             infraction.proprietaire, infraction.ville, infraction.statut, infraction.date_statut,
+             infraction.categorie))
         self.get_connection().commit()
 
     def get_infractions(self):
@@ -29,7 +34,9 @@ class DatabaseInfractions:
 
     def recherche_infraction(self, nomEtablissement, proprietaire, rue):
         cursor = self.get_connection().cursor()
-        cursor.execute("SELECT * FROM infractions WHERE etablissement LIKE ? AND proprietaire LIKE ? AND adresse LIKE ?", ('%'+nomEtablissement+'%', '%'+proprietaire+'%', '%'+rue+'%',))
+        cursor.execute(
+            "SELECT * FROM infractions WHERE etablissement LIKE ? AND proprietaire LIKE ? AND adresse LIKE ?",
+            ('%' + nomEtablissement + '%', '%' + proprietaire + '%', '%' + rue + '%',))
         infractions_data = cursor.fetchall()
         infractions = [Infractions(*infraction) for infraction in infractions_data]
         return infractions
@@ -47,3 +54,15 @@ class DatabaseInfractions:
         infractions_data = cursor.fetchall()
         infractions = [Infractions(*infraction) for infraction in infractions_data]
         return infractions
+
+    def get_all_etablissements(self) -> list:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT DISTINCT id_business, etablissement FROM infractions")
+        donnees = cursor.fetchall()
+        return donnees
+
+    def get_etablissement_by_id_business(self, id_business) -> str:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT etablissement FROM Infractions WHERE id_business == ?", (id_business,))
+        donnees = cursor.fetchone()
+        return donnees[0]

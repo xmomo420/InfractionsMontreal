@@ -1,6 +1,8 @@
+import os
 import secrets
+from functools import wraps
 
-from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for
+from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for, session
 import requests
 from schema_utilisateur import valider_nouvel_utilisateur
 from flask_json_schema import JsonValidationError, JsonSchema
@@ -23,8 +25,10 @@ app.config['SECRET_KEY'] = secrets.token_hex(16)
 
 @app.errorhandler(JsonValidationError)
 def validation_error(e):
-    errors = [validation_error.message for _validation_error in e.errors]
-    return jsonify({'error': e.message, 'errors': errors}), 400
+    errors = [validation_error.message for validation_error in e.errors]
+    message = ("Le formulaire n'a pas été rempli correctement, veuillez remplir tous les champs et respecter les "
+               "critères")
+    return jsonify({'error': e.message, 'errors': errors, 'message': message}), 400
 
 
 def get_db_infractions():
@@ -121,19 +125,60 @@ def etablissement(id_business):
     return jsonify(infractions_json), 200
 
 
+# Gestion de la session en cours
+def est_authentifie():
+    if 'id' in session:
+        id_session_db = get_db_utilisateurs().get_session(session['id'])
+        return id_session_db is not None
+
+
+def authentification_requise(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not est_authentifie():
+            message = "Vous devez d'abord vous authentifier"
+            return redirect(url_for('login', message=message), 302)
+        return f(*args, **kwargs)
+    return decorated
+
+
 @app.route('/doc')
 def doc():
+    # TODO : Avec le fichier RAML et la commande
     return render_template('doc.html')
 
 
-def courriel_unique(courriel):
+def courriel_unique(courriel) -> bool:
     liste_courriels = get_db_utilisateurs().get_all_courriels()
-    return courriel in liste_courriels
+    return courriel not in liste_courriels
 
 
-@app.route('/api/inscription', methods=['POST'])
-@schema_utilisateur.validate(valider_nouvel_utilisateur)
+@app.route('/inscription', methods=['GET'])
 def inscription():
+    criteres_mdp = [
+        "Doit contenir au moins 8 caractères au total",
+        "Doit contenir au moins une lettre minuscule",
+        "Doit contenir au moins une lettre majuscule",
+        "Doit contenir au moins un chiffre",
+        "Doit contenir au moins un caractère spécial"
+    ]
+    criteres = {
+        "prenom": "Un prénom ne peut pas être vide",
+        "nom": "Un nom ne peut pas être vide",
+        "courriel": "Une adresse courriel valide est obligatoire",
+        "confirmation_courriel": "Vous devez confirmer l'adresse courriel",
+        "mot_de_passe": "Le mot de passe doit respecter les critères",
+        "confirmation_mot_de_passe": "Les mots de passe ne correspondent pas ou ne sont pas valides",
+    }
+    dict_etablissements = get_db_infractions().get_all_etablissements()
+    message = request.args.get('message', None)
+    return render_template('inscription.html', nom_page='Inscription', criteres_mdp=criteres_mdp,
+                           liste=dict_etablissements, criteres=criteres, message=message), 200
+
+
+@app.route('/api/inscription/traitement', methods=['POST'])
+@schema_utilisateur.validate(valider_nouvel_utilisateur)
+def traitement_inscription():
     try:
         data = request.get_json()
         prenom = data.get("prenom")
@@ -147,14 +192,69 @@ def inscription():
             nouvel_utilisateur = Utilisateur(_id=None, prenom=prenom.strip(), nom=nom.strip(),
                                              courriel=courriel.strip(), salt=salt, _hash=hashed, photo=None,
                                              etablissements=_etablissements)
-            get_db_utilisateurs().ajouter_utilisateur(nouvel_utilisateur)
+            id_utilisateur = get_db_utilisateurs().ajouter_utilisateur(nouvel_utilisateur)
+            _id = uuid.uuid4().hex
+            get_db_utilisateurs().creer_session(_id=_id, id_utilisateur=id_utilisateur)
+            session['id'] = _id
+            session['id_utilisateur'] = id_utilisateur
             message = "Inscription réussi !"
             code = 201
         else:
             message = f"L'adresse courriel \"{courriel}\" est déjà utilisée"
             code = 200
-        return message, code
+        return jsonify({"message": message, "code": code}), code
 
     except Exception as e:
         return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
                              "signalée à l'équipe de développement."), 500
+
+
+@app.route('/profil', methods=['GET'])
+@authentification_requise
+def profil():
+    utilisateur_connecte = get_db_utilisateurs().get_utilisateur(session['id_utilisateur'])
+    prenom = utilisateur_connecte.prenom
+    nom = utilisateur_connecte.nom
+    courriel = utilisateur_connecte.courriel
+    _id = utilisateur_connecte.id
+    id_etablissements = utilisateur_connecte.etablissements
+    #etablissements =
+    photo = utilisateur_connecte.photo
+    if photo is not None:
+        photo_b64 = base64.b64encode(photo).decode('utf-8')
+    else:  # Photo NULL dans la BD, donc on utilise la photo par défaut
+        if os.path.exists('static/images/photo_par_defaut.png'):
+            # Lire le contenu de l'image en binaire
+            with open('static/images/photo_par_defaut.png', 'rb') as file:
+                image_par_defaut = file.read()
+            # Convertir l'image en base64
+            photo_b64 = base64.b64encode(image_par_defaut).decode('utf-8')
+        else:
+            # Si le fichier n'existe pas, attribuer une valeur par défaut
+            photo_b64 = None
+    return render_template('profil.html', nom_page='Profil', id=_id, prenom=prenom, nom=nom,
+                           courriel=courriel, photo=photo_b64, etablissements=id_etablissements), 200
+
+
+@app.route('/login', methods=['GET'])
+def login():
+    # TODO
+    return render_template('login.html', nom_page='Authentification'), 200
+
+
+@app.route('/api/login/traitement', methods=['POST'])
+def traitement_login():
+    # TODO
+    return
+
+
+@app.route('/logout')
+@authentification_requise
+def logout():
+    id_session = session['id']
+    session.pop('id', None)
+    session.pop('id_utilisateur', None)
+    get_db_utilisateurs().supprimer_session(id_session)
+    message_logout = "Vous avez été déconnecté avec succès"
+    return redirect(url_for('home', message=message_logout),
+                    302)

@@ -39,7 +39,7 @@ types:
           application/json:
             example: |
               {
-                "message": "L'utilisateur Aaron Osorio a été ajouté avec succès."
+                "message": "L'utilisateur Mario Lemieux a été ajouté avec succès."
               }
       400:champs_manquant:
         description: Champ manquant, tous les champs doivent être remplis et respecter les critères
@@ -47,7 +47,7 @@ types:
           application/json:
             example: |
               {
-                "'date_naissance' is a required property"
+                "'mot_de_passe' is a required property"
               }
       400:mauvais type:
         description: Champ du mauvais type
@@ -64,4 +64,8 @@ types:
             example: |
               {
                 "error": "Une erreur interne s'est produite."
+              }
 
+/doc:
+  get:
+    description: Documentation de l'API
