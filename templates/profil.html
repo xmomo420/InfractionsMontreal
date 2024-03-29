@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="container card border-2 p-4 mt-4 mb-4">
+        <!-- TODO : Formulaire avec tous les champs en READONLY, sauf la photo de profil et les établissements -->
+        <form class="row g-4" enctype="multipart/form-data">
+            <h2 class="text-center">Profil de {{ prenom }} {{ nom }}</h2>
+            <div class="col-md-4">
+                <label class="form-label" for="prenom">Prénom</label>
+                <input readonly class="form-control" id="prenom" value="{{ prenom }}" type="text">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="nom">Nom</label>
+                <input readonly class="form-control" id="nom" value="{{ nom }}" type="text">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="courriel">Adresse courriel</label>
+                <input readonly class="form-control" id="courriel" value="{{ courriel }}" type="email">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="photoActuelle">Photo actuelle</label>
+                <img class="img-fluid card" src="data:image/png;base64,{{ photo }}" width="40%" alt="Photo de profil">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="nouvellePhoto">Nouvelle photo</label>
+                <input class="form-control" id="nouvellePhoto" type="file" accept="image/png">
+            </div>
+            <hr class="border border-dark border-4 card">
+            <h5>Établissements à surveiller</h5>
+            <!-- Établissements à surveiller -->
+            <div class="col-md-5">
+                <label for="listeEtablissements">
+                    <select id="listeEtablissements" class="form-select">
+                        <option value="null,-1" selected>Choisissez un établissement à ajouter</option>
+                        {% if liste %}
+                            {% for etablissement in liste %}
+                                <option value="{{etablissement[1]}},{{ etablissement[0] }}">
+                                    {{ etablissement[1] }} ({{ etablissement[0] }})
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </label>
+                <!-- Bouton pour ajouter l'établissement -->
+                <div class="mt-3">
+                    <button type="button" onclick="ajouterEtablissement()" class="btn btn-success">Ajouter</button>
+                </div>
+            </div>
+            <!-- Liste des établissements à surveiller -->
+            <div class="table-responsive text-center col-md-7">
+                <table class="table align-middle table-secondary table-bordered">
+                    <thead class="table-primary">
+                    <tr>
+                        <th scope="col">Nom</th>
+                        <th scope="col">ID</th>
+                        <th scope="col"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="corpsTable">
+                        {% for etablissement in etablissements %}
+                        	<tr>
+                                <td>{{ etablissement[1] }}</td>
+                                <td>{{ etablissement[0] }}</td>
+                                <td>
+                                    <button class="btn btn-warning" type="button" onclick="enleverEtablissement({{ etablissement[0] }})">Supprimer</button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        <!-- Reste des rangées ajoutées à l'aide de JS -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Bouton de soumission -->
+            <div class="mb-3 mt-6 d-flex gap-4 justify-content-center">
+                <button id="boutonSoumission" class="btn btn-lg btn-primary" type="submit">Soumettre</button>
+                <a href="{{ url_for('home') }}">
+                    <button type="button" class="btn btn-lg btn-warning">Annuler</button>
+                </a>
+            </div>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='js/profil.js') }}"></script>
+{% endblock %}
