@@ -307,7 +307,6 @@ def login():
 
 @app.route('/api/login/traitement', methods=['POST'])
 @schema_utilisateur.validate(valider_login)
-@authentification_requise
 def traitement_login():
     try:
         data = request.get_json()
