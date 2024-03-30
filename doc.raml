@@ -39,7 +39,11 @@ types:
           application/json:
             example: |
               {
+<<<<<<< HEAD
                 "message": "L'utilisateur Mario Lemieux a été ajouté avec succès."
+=======
+                "message": "L'utilisateur Aaron Osorio a été ajouté avec succès."
+>>>>>>> add59ff4528a55752ff19711a12abcb03f1085de
               }
       400:champs_manquant:
         description: Champ manquant, tous les champs doivent être remplis et respecter les critères
@@ -47,7 +51,11 @@ types:
           application/json:
             example: |
               {
+<<<<<<< HEAD
                 "'mot_de_passe' is a required property"
+=======
+                "'date_naissance' is a required property"
+>>>>>>> add59ff4528a55752ff19711a12abcb03f1085de
               }
       400:mauvais type:
         description: Champ du mauvais type
@@ -66,6 +74,106 @@ types:
                 "error": "Une erreur interne s'est produite."
               }
 
+<<<<<<< HEAD
 /doc:
   get:
     description: Documentation de l'API
+=======
+types:
+  Infraction:
+    type: object
+    properties:
+      id: {type: integer}
+      id_poursuite: {type: integer}
+      id_businness: {type: integer}
+      date: {type: string}
+      description: {type: string}
+      adresse: {type: string}
+      date_jugement: {type: string}
+      etablissement: {type: string}
+      montant: {type: number}
+      proprietaire: {type: string}
+      ville: {type: string}
+      statut: {type: string}
+      date_statut: {type: string}
+      categorie: {type: string}
+    example: |
+    {
+      "id": 1,
+      "id_poursuite": 1,
+      "id_businness": 1,
+      "date": "2022-01-01",
+      "description": "Infraction XYZ",
+      "adresse": "123 Rue ABC",
+      "date_jugement": "2022-01-01",
+      "etablissement": "Restaurant XYZ",
+      "montant": 100,
+      "proprietaire": "John Doe",
+      "ville": "Montréal",
+      "statut": "Ferme",
+      "date_statut": "2022-01-01",
+      "categorie": "XYZ"
+
+    }
+
+/api/contraventions:
+  get:
+    description: Récupère les contraventions pour une période donnée en paramètre
+    queryParameters:
+      du:
+        description: Date de début de la période
+        type: date
+        required: true
+      au:
+        description: Date de fin de la période
+        type: date
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            type: Infraction[]
+            example: |
+              [
+                {
+                  "id": 1,
+                  "id_poursuite": 1,
+                  "id_businness": 1,
+                  "date": "2022-01-01",
+                  "description": "Infraction XYZ",
+                  "adresse": "123 Rue ABC",
+                  "date_jugement": "2022-01-01",
+                  "etablissement": "Restaurant XYZ",
+                  "montant": 100,
+                  "proprietaire": "John Doe",
+                  "ville": "Montréal",
+                  "statut": "Ferme",
+                  "date_statut": "2022-01-01",
+                  "categorie": "XYZ"
+                }
+              ]
+      400:
+        description: Les dates de début et de fin de la période doivent être fournies
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Les dates de début et de fin de la période doivent être fournies."
+              }
+      404:
+        description: Aucune contravention n'a été trouvée pour la période donnée
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Aucune contravention n'a été trouvée pour la période donnée."
+              }
+      500:
+        description: Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Une erreur interne s'est produite."
+              }
+>>>>>>> add59ff4528a55752ff19711a12abcb03f1085de
