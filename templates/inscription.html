@@ -6,7 +6,7 @@
             <h3 id="message" class="alert-heading"></h3>
         </div>
         <!-- Formulaire d'inscription -->
-        <form class="row g-4">
+        <form id="formulaireInscription" class="row g-4">
             <h2 class="text-center">Nouvel utilisateur</h2>
             <hr class="card border border-dark border-4">
             <h5>Renseignements personnels</h5>
@@ -83,7 +83,7 @@
             </div>
             <!-- Bouton de soumission -->
             <div class="mb-3 mt-6 d-flex gap-4 justify-content-center">
-                <button id="boutonSoumission" class="btn btn-lg btn-primary" type="submit">Soumettre</button>
+                <button id="boutonInscription" class="btn btn-lg btn-primary" type="submit">Soumettre</button>
                 <a href="{{ url_for('home') }}">
                     <button type="button" class="btn btn-lg btn-warning">Annuler</button>
                 </a>
@@ -92,8 +92,9 @@
     </div>
     <!-- Déclaration d'une variable globale pour utiliser l'interpréteur Jinja2 -->
     <script>
-        const url = "{{ url_for('home') }}";
+        const urlHome = "{{ url_for('home') }}";
+        const urlApiInscription = "{{ url_for('traitement_inscription') }}";
     </script>
     <!-- Ajout du script JS -->
-    <script src="{{ url_for('static', filename='js/inscription.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utilisateur.js') }}"></script>
 {% endblock %}

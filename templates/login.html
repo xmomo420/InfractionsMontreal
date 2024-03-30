@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div style="width: 35%" class="bg-primary-subtle justify-content-center container card p-4 mt-4 mb-4">
+        <!-- Afficher message s'il y a lieu -->
+        <div style="display: none" id="conteneurMessage" class="mb-3 text-center alert alert-danger" role="alert">
+            <h3 id="message" class="alert-heading"></h3>
+        </div>
+        <form id="formulaireLogin" class="d-flex flex-lg-column align-items-center">
+            <!-- Titre -->
+            <h2 class="mb-3">Authentification</h2>
+            <!-- Courriel -->
+            <div class="mb-3 text-center">
+                <label class="form-label" for="courriel">Adresse courriel</label>
+                <input class="form-control" id="courriel" type="email" name="courriel"
+                       placeholder="Entrez votre adresse courriel">
+            </div>
+            <!-- Mot de passe -->
+            <div class="mb-3 text-center">
+                <label class="form-label" for="motDePasse">Adresse courriel</label>
+                <input class="form-control" id="motDePasse" type="password" name="mot_de_passe"
+                       placeholder="Entrez votre mot de passe">
+            </div>
+            <!-- Bouton de soumission -->
+            <div class="mb-3 text-center">
+                <button id="boutonLogin" type="submit" class="btn btn-primary">Se connecter</button>
+            </div>
+        </form>
+    </div>
+    <!-- Scripts -->
+    <script>
+        const urlHome = "{{ url_for('home') }}";
+        const urlApiLogin = "{{ url_for('traitement_login') }}";
+    </script>
+    <script src="{{ url_for('static', filename="js/utilisateur.js") }}" ></script>
+{% endblock %}

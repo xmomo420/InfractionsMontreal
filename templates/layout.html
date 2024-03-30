@@ -44,7 +44,7 @@
                         </a>
                     </li>
                     <li class="nav-item mx-4">
-                        <a href="{{ url_for('inscription') }}">
+                        <a href="{{ url_for('login') }}">
                             <button class="btn btn-warning" type="button">Connexion</button>
                         </a>
                     </li>
@@ -52,6 +52,12 @@
             </ul>
         </div>
     </nav>
+    <!-- Afficher message s'il y a lieu -->
+    {% if message %}
+        <div class="mt-4 container text-center alert alert-success" role="alert">
+            <h3 class="alert-heading">{{ message }}</h3>
+        </div>
+    {% endif %}
     {% block content %}{% endblock %}
     <!-- Ajout Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

@@ -32,20 +32,19 @@ valider_nouvel_utilisateur = {
     "additionalProperties": False,
 }
 
-valider_modification_utilisateur = {
+valider_login = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-        "photo_profil": {
+        "courriel": {
             "type": "string",
-            "contentEncoding": "base64",
-            "contentMediaType": "image/png"
+            "format": "email"
         },
-        "etablissements": {
-            "type": "array",
-            "items": {"type": "number"}
+        "mot_de_passe": {
+            "type": "string",
+            "minLength": 1
         }
     },
-    "required": [],
+    "required": ["courriel", "mot_de_passe"],
     "additionalProperties": False,
 }

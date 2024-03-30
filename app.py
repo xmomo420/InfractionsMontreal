@@ -1,10 +1,12 @@
+import json
 import os
 import secrets
 from functools import wraps
 
-from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for, session
+from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for, session, abort
+from flask_mail import Mail, Message
 import requests
-from schema_utilisateur import valider_nouvel_utilisateur
+from schema_utilisateur import valider_nouvel_utilisateur, valider_login
 from flask_json_schema import JsonValidationError, JsonSchema
 from database_infractions import DatabaseInfractions
 from database_utilisateur import DatabaseUtilisateur
@@ -20,6 +22,7 @@ import csv
 
 app = Flask(__name__, static_url_path="", static_folder="static")
 schema_utilisateur = JsonSchema(app)
+mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
 
@@ -54,7 +57,9 @@ def close_connection(exception):
 
 @app.route('/')
 def home():
-    return render_template('accueil.html', nom_page='Infractions Montréal'), 200
+    return render_template('accueil.html',
+                           message=request.args.get('message', None),
+                           nom_page='Infractions Montréal'), 200
 
 
 # Cette route permet de recuperer les donnees du fichier csv et les insere dans la base de donnees  A1
@@ -139,6 +144,7 @@ def authentification_requise(f):
             message = "Vous devez d'abord vous authentifier"
             return redirect(url_for('login', message=message), 302)
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -176,6 +182,13 @@ def inscription():
                            liste=dict_etablissements, criteres=criteres, message=message), 200
 
 
+def authentifier_utilisateur(id_utilisateur: int):
+    _id = uuid.uuid4().hex
+    get_db_utilisateurs().creer_session(_id=_id, id_utilisateur=id_utilisateur)
+    session['id'] = _id
+    session['id_utilisateur'] = id_utilisateur
+
+
 @app.route('/api/inscription/traitement', methods=['POST'])
 @schema_utilisateur.validate(valider_nouvel_utilisateur)
 def traitement_inscription():
@@ -193,10 +206,7 @@ def traitement_inscription():
                                              courriel=courriel.strip(), salt=salt, _hash=hashed, photo=None,
                                              etablissements=_etablissements)
             id_utilisateur = get_db_utilisateurs().ajouter_utilisateur(nouvel_utilisateur)
-            _id = uuid.uuid4().hex
-            get_db_utilisateurs().creer_session(_id=_id, id_utilisateur=id_utilisateur)
-            session['id'] = _id
-            session['id_utilisateur'] = id_utilisateur
+            authentifier_utilisateur(id_utilisateur)
             message = "Inscription réussi !"
             code = 201
         else:
@@ -213,12 +223,21 @@ def traitement_inscription():
 @authentification_requise
 def profil():
     utilisateur_connecte = get_db_utilisateurs().get_utilisateur(session['id_utilisateur'])
+    aide = {
+        "prenom": "Vous ne pouvez pas modifier votre prénom",
+        "nom": "Vous ne pouvez pas modifier votre nom",
+        "courriel": "Vous ne pouvez pas modifier votre adresse courriel"
+    }
     prenom = utilisateur_connecte.prenom
     nom = utilisateur_connecte.nom
     courriel = utilisateur_connecte.courriel
     _id = utilisateur_connecte.id
-    id_etablissements = utilisateur_connecte.etablissements
-    #etablissements =
+    id_etablissements_surveilles = utilisateur_connecte.etablissements
+    _etablissements = []
+    for id_etablissement in id_etablissements_surveilles:
+        nom_etablissement = get_db_infractions().get_etablissement_by_id_business(id_etablissement)
+        _etablissements.append((id_etablissement, nom_etablissement))
+    liste_tous_etablissements = get_db_infractions().get_all_etablissements()
     photo = utilisateur_connecte.photo
     if photo is not None:
         photo_b64 = base64.b64encode(photo).decode('utf-8')
@@ -233,19 +252,58 @@ def profil():
             # Si le fichier n'existe pas, attribuer une valeur par défaut
             photo_b64 = None
     return render_template('profil.html', nom_page='Profil', id=_id, prenom=prenom, nom=nom,
-                           courriel=courriel, photo=photo_b64, etablissements=id_etablissements), 200
+                           courriel=courriel, photo=photo_b64, etablissements=_etablissements,
+                           liste=liste_tous_etablissements, aide=aide), 200
+
+
+def fichier_valide(filename: str) -> bool:
+    return filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg")
+
+
+@app.route('/api/profil/modifer/<id>', methods=['PUT'])
+def traitement_modifications(id):
+    nouvelle_photo = False
+    photo = request.files["photo"]
+    _etablissements = request.form["liste_etablissements"]
+    _etablissements = json.loads(_etablissements)
+    if photo.filename != '':
+        if fichier_valide(photo.filename):
+            message = "Modifications apportées avec succès"
+            code = 200
+            nouvelle_photo = True
+            get_db_utilisateurs().modifier_utilisateur(id, _etablissements, photo)
+        else:
+            message = f"Erreur lors de la lecture du fichier transmis : \"{photo.filename}\""
+            code = 400
+    else:
+        message = "Modifications apportées avec succès"
+        code = 200
+        get_db_utilisateurs().modifier_utilisateur(id, _etablissements, None)
+    return jsonify({"message": message, "code": code, "photo": nouvelle_photo}), code
 
 
 @app.route('/login', methods=['GET'])
 def login():
-    # TODO
     return render_template('login.html', nom_page='Authentification'), 200
 
 
 @app.route('/api/login/traitement', methods=['POST'])
+@schema_utilisateur.validate(valider_login)
 def traitement_login():
-    # TODO
-    return
+    try:
+        data = request.get_json()
+        courriel = data['courriel']
+        mot_de_passe = data['mot_de_passe']
+        id_utilisateur = get_db_utilisateurs().authentifier(courriel, mot_de_passe)
+        if id_utilisateur != -1:
+            authentifier_utilisateur(id_utilisateur)
+            return jsonify(), 200
+        else:
+            message = "Combinaison courriel et mot de passe invalide"
+            return jsonify({'message': message}), 200
+    except Exception as e:
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
 
 
 @app.route('/logout')

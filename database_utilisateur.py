@@ -1,3 +1,4 @@
+import hashlib
 import sqlite3
 import json
 
@@ -37,22 +38,22 @@ class DatabaseUtilisateur:
             liste_courriels.append(courriel[0])
         return liste_courriels
 
-    def creer_session(self, _id, id_utilisateur):
+    def creer_session(self, _id, id_utilisateur) -> None:
         connection = self.get_connection()
         connection.execute("INSERT INTO Sessions "
                            "(id, id_utilisateur) VALUES (?, ?)",
                            (_id, id_utilisateur))
         connection.commit()
 
-    def supprimer_session(self, _id):
+    def supprimer_session(self, _id) -> None:
         connection = self.get_connection()
-        connection.execute("DELETE FROM Sessions WHERE id = ?",
+        connection.execute("DELETE FROM Sessions WHERE id == ?",
                            (_id,))
         connection.commit()
 
-    def get_session(self, _id):
+    def get_session(self, _id) -> str:
         cursor = self.get_connection().cursor()
-        cursor.execute("SELECT * FROM Sessions WHERE id = ?",
+        cursor.execute("SELECT * FROM Sessions WHERE id == ?",
                        (_id,))
         donnee = cursor.fetchone()
         return donnee[0]
@@ -65,5 +66,32 @@ class DatabaseUtilisateur:
         return Utilisateur(_id=donnee[0], prenom=donnee[1], nom=donnee[2], courriel=donnee[3], photo=donnee[6],
                            etablissements=liste_etablissements, salt=None, _hash=None)
 
+    def authentifier(self, courriel: str, mot_de_passe: str) -> int:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT * FROM Utilisateurs WHERE courriel == ?", (courriel,))
+        utilisateur = cursor.fetchone()
+        if utilisateur:
+            salt = utilisateur[5]
+            _hash = utilisateur[4]
+            if _hash == hashlib.sha512(
+                    str(mot_de_passe + salt).encode("utf-8")).hexdigest():
+                _id = utilisateur[0]
+            else:
+                _id = -1
+        else:
+            _id = -1
+        return _id
 
-
+    def modifier_utilisateur(self, _id, etablissements, photo) -> bool:
+        connection = self.get_connection()
+        etablissements_json = json.dumps(etablissements)
+        if photo is not None:
+            photo_blob = sqlite3.Binary(photo.read())
+            connection.execute("UPDATE Utilisateurs SET etablissements = ?, photo = ? WHERE id == ?",
+                               (etablissements_json, photo_blob, _id))
+        else:
+            connection.execute("UPDATE Utilisateurs SET etablissements = ? WHERE id == ?",
+                               (etablissements_json, _id))
+        connection.commit()
+        cursor = connection.cursor()
+        return cursor.rowcount > 0

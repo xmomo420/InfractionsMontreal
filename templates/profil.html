@@ -1,35 +1,45 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="container card border-2 p-4 mt-4 mb-4">
-        <!-- TODO : Formulaire avec tous les champs en READONLY, sauf la photo de profil et les établissements -->
-        <form class="row g-4" enctype="multipart/form-data">
+    <div class="bg-primary-subtle container card border-2 p-4 mt-4 mb-4">
+        <div style="display: none" id="conteneurMessage" class="container text-center alert alert-danger" role="alert">
+            <h3 id="contenuMessage" class="alert-heading"></h3>
+        </div>
+        <form id="formulaireModifications" class="row g-4" enctype="multipart/form-data">
             <h2 class="text-center">Profil de {{ prenom }} {{ nom }}</h2>
+            <hr class="border border-dark border-4 card">
+            <h5 class="text-center">Renseignements personnels</h5>
             <div class="col-md-4">
                 <label class="form-label" for="prenom">Prénom</label>
-                <input readonly class="form-control" id="prenom" value="{{ prenom }}" type="text">
+                <input readonly class="form-control" id="prenom" value="{{ prenom }}" aria-describedby="aidePrenom"
+                       type="text">
+                <div class="form-text" id="aidePrenom">{{ aide['prenom'] }}</div>
             </div>
             <div class="col-md-4">
                 <label class="form-label" for="nom">Nom</label>
-                <input readonly class="form-control" id="nom" value="{{ nom }}" type="text">
+                <input readonly class="form-control" id="nom" value="{{ nom }}" aria-describedby="aideNom" type="text">
+                <div class="form-text" id="aideNom">{{ aide['nom'] }}</div>
             </div>
             <div class="col-md-4">
                 <label class="form-label" for="courriel">Adresse courriel</label>
-                <input readonly class="form-control" id="courriel" value="{{ courriel }}" type="email">
+                <input readonly class="form-control" id="courriel" value="{{ courriel }}"
+                       aria-describedby="aideCourriel" type="email">
+                <div class="form-text" id="aideCourriel">{{ aide['courriel'] }}</div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label" for="photoActuelle">Photo actuelle</label>
-                <img class="img-fluid card" src="data:image/png;base64,{{ photo }}" width="40%" alt="Photo de profil">
+                <img id="photoActuelle" class="img-fluid card" src="data:image/*;base64,{{ photo }}" width="40%" alt="Photo de profil">
             </div>
-            <div class="col-md-6">
+            <!-- Champs modifiables -->
+            <div class="col-md-4">
                 <label class="form-label" for="nouvellePhoto">Nouvelle photo</label>
-                <input class="form-control" id="nouvellePhoto" type="file" accept="image/png">
+                <input class="form-control" name="photo" id="nouvellePhoto" type="file"
+                       accept="image/png, image/jpeg, image/jpg">
             </div>
             <hr class="border border-dark border-4 card">
-            <h5>Établissements à surveiller</h5>
-            <!-- Établissements à surveiller -->
-            <div class="col-md-5">
+            <h5 class="text-center">Établissements à surveiller</h5>
+            <div class="col-md-4">
                 <label for="listeEtablissements">
-                    <select id="listeEtablissements" class="form-select">
+                    <select name="etablissements" id="listeEtablissements" class="form-select">
                         <option value="null,-1" selected>Choisissez un établissement à ajouter</option>
                         {% if liste %}
                             {% for etablissement in liste %}
@@ -57,11 +67,13 @@
                     </thead>
                     <tbody id="corpsTable">
                         {% for etablissement in etablissements %}
-                        	<tr>
+                        	<tr id="{{ etablissement[0] }}">
                                 <td>{{ etablissement[1] }}</td>
                                 <td>{{ etablissement[0] }}</td>
                                 <td>
-                                    <button class="btn btn-warning" type="button" onclick="enleverEtablissement({{ etablissement[0] }})">Supprimer</button>
+                                    <button class="btn btn-danger" type="button"
+                                            onclick="supprimerEtablissement({{ etablissement[0] }})">Supprimer
+                                    </button>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -71,12 +83,16 @@
             </div>
             <!-- Bouton de soumission -->
             <div class="mb-3 mt-6 d-flex gap-4 justify-content-center">
-                <button id="boutonSoumission" class="btn btn-lg btn-primary" type="submit">Soumettre</button>
+                <button class="btn btn-lg btn-primary" type="submit">Soumettre</button>
                 <a href="{{ url_for('home') }}">
                     <button type="button" class="btn btn-lg btn-warning">Annuler</button>
                 </a>
             </div>
         </form>
     </div>
-    <script src="{{ url_for('static', filename='js/profil.js') }}"></script>
+    <script>
+        const urlHome = "{{ url_for('home') }}";
+        const urlApiModifications = "{{ url_for('traitement_modifications', id=session['id_utilisateur']) }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/utilisateur.js') }}"></script>
 {% endblock %}
