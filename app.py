@@ -7,7 +7,7 @@ from typing import List
 from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for, session, abort
 from flask_mail import Mail, Message
 import requests
-from schema_utilisateur import valider_nouvel_utilisateur, valider_login
+from schema_utilisateur import valider_nouvel_utilisateur, valider_login, valider_suppression
 from flask_json_schema import JsonValidationError, JsonSchema
 from database_infractions import DatabaseInfractions
 from database_utilisateur import DatabaseUtilisateur
@@ -36,8 +36,7 @@ app.config['SECRET_KEY'] = secrets.token_hex(16)
 @app.errorhandler(JsonValidationError)
 def validation_error(e):
     errors = [validation_error.message for validation_error in e.errors]
-    message = ("Le formulaire n'a pas été rempli correctement, veuillez remplir tous les champs et respecter les "
-               "critères")
+    message = "Un ou plusieurs champs sont invalide dans la requête"
     return jsonify({'error': e.message, 'errors': errors, 'message': message}), 400
 
 
@@ -67,7 +66,7 @@ def home():
     try:
         infractions = get_db_infractions().get_infractions()
         if len(infractions) == 0:
-            return "Aucune données disponible", 404
+            return redirect(url_for('index')), 302
         else:
             return render_template('accueil.html',
                                    message=request.args.get('message', None),
@@ -81,7 +80,8 @@ def home():
 def index():
     with app.app_context():  # Envelopper le code dans un contexte d'application Flask
         try:
-            url = 'https://data.montreal.ca/dataset/05a9e718-6810-4e73-8bb9-5955efeb91a0/resource/7f939a08-be8a-45e1-b208-d8744dca8fc6/download/violations.csv'
+            url = ('https://data.montreal.ca/dataset/05a9e718-6810-4e73-8bb9-5955efeb91a0/resource/7f939a08-be8a-45e1'
+                   '-b208-d8744dca8fc6/download/violations.csv')
             response = requests.get(url)
             response.raise_for_status()
 
@@ -97,7 +97,6 @@ def index():
                                          row['adresse'], date_jugement,
                                          row['etablissement'], row['montant'], row['proprietaire'], row['ville'],
                                          row['statut'], date_statut, row['categorie'])
-                # TODO : Retourner une liste avec toutes les nouvelles infractions ajoutées
                 if get_db_infractions().creer_infraction(infraction):
                     destinataires = get_db_utilisateurs().get_courriels_by_business_id(infraction.id_business)
                     if len(destinataires) != 0:
@@ -111,7 +110,6 @@ def index():
 scheduler = BackgroundScheduler()
 scheduler.add_job(index, 'cron', hour=00, minute=00, second=00)
 scheduler.start()
-print("Scheduler started...")
 
 
 # Cette route permet de rechercher les infractions dans la base de donnees selon le nom de l'etablissement,
@@ -350,6 +348,51 @@ def envoyer_courriel(destinataires: list, infraction: Infractions):
     for destinataire in destinataires:
         nom_complet = get_db_utilisateurs().get_nom_by_courriel(destinataire)
         message = Message(subject=objet, sender=sender, recipients=[destinataire])
+        id_utilisateur = get_db_utilisateurs().get_id_by_courriel(destinataire)
+        token = generer_token(id_utilisateur)
+        # TODO : Ajouter un scheduler pour supprimer le token après 5 minutes
+        # TODO : token et id_utilisateur
         message.html = render_template('courriel.html', nom_complet=nom_complet,
-                                       infraction=infraction)
+                                       infraction=infraction, id_utilisateur=id_utilisateur, token=token,
+                                       etablissement=infraction.id_business)
         mail.send(message)
+
+
+@app.route('/confirmer-suppression/<id_utilisateur>&<token>&<etablissement>')
+def confirmer_suppression(id_utilisateur, token, etablissement):
+    if get_db_utilisateurs().verifier_token(id_utilisateur, token):
+        return render_template('confirmation_suppression.html',
+                               id_utilisateur=id_utilisateur, token=token,
+                               etablissement=etablissement, nom_page='Confirmer suppression'), 200
+    else:
+        abort(403)
+
+
+def generer_token(id_utilisateur) -> str or None:
+    if get_db_utilisateurs().get_utilisateur(id_utilisateur) is not None:
+        return get_db_utilisateurs().generer_token(id_utilisateur)
+    else:
+        return None
+
+
+@app.route('/api/supprimer-etablissement', methods=["PUT"])
+@schema_utilisateur.validate(valider_suppression)
+def supprimer_etablissement():
+    try:
+        data = request.get_json()
+        id_utilisateur = data['id_utilisateur']
+        token = data['token']
+        if get_db_utilisateurs().verifier_token(id_utilisateur, token):
+            _etablissement = data['etablissement']
+            etablissements_surveilles = get_db_utilisateurs().get_all_etablissements_surveilles(id_utilisateur)
+            etablissements_surveilles.remove(_etablissement)
+            get_db_utilisateurs().modifier_utilisateur(id_utilisateur, etablissements_surveilles, None)
+            message = "L'établissement a été supprimé de votre profil"
+            code = 201
+        else:
+            message = "Le jeton d'authentification fourni est inalide"
+            code = 403
+        return jsonify({"message": message, "code": code}), code
+    except Exception as e:
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500

@@ -27,11 +27,10 @@
         <p class="text-start">{{ infraction.description }}</p>
         <hr class="card border border-info border-4">
         <p class="text-start">Cliquer sur le bouton ci-dessous si vous ne voulez plus recevoir de courriels pour cet établissement</p>
-        <!-- TODO : Changer le lien -->
-        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+        <a href="{{ request.url_root }}confirmer-suppression/{{ id_utilisateur }}&{{ token }}&{{ etablissement }}">
             <button class="btn btn-lg btn-danger">Désactiver</button>
         </a>
-    </div>
+        </div>
     <!-- Ajout Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </div>

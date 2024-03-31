@@ -1,4 +1,5 @@
 import hashlib
+import secrets
 import sqlite3
 import json
 
@@ -58,13 +59,16 @@ class DatabaseUtilisateur:
         donnee = cursor.fetchone()
         return donnee[0]
 
-    def get_utilisateur(self, _id) -> Utilisateur:
+    def get_utilisateur(self, _id) -> Utilisateur or None:
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT * FROM Utilisateurs WHERE id == ?", (_id,))
         donnee = cursor.fetchone()
-        liste_etablissements = json.loads(donnee[7])
-        return Utilisateur(_id=donnee[0], prenom=donnee[1], nom=donnee[2], courriel=donnee[3], photo=donnee[6],
-                           etablissements=liste_etablissements, salt=None, _hash=None)
+        if donnee:
+            liste_etablissements = json.loads(donnee[7])
+            return Utilisateur(_id=donnee[0], prenom=donnee[1], nom=donnee[2], courriel=donnee[3], photo=donnee[6],
+                               etablissements=liste_etablissements, salt=None, _hash=None)
+        else:
+            return None
 
     def authentifier(self, courriel: str, mot_de_passe: str) -> int:
         cursor = self.get_connection().cursor()
@@ -113,3 +117,34 @@ class DatabaseUtilisateur:
             if donnee:
                 courriels.append(donnee[0])
         return courriels
+
+    def generer_token(self, id_utilisateur) -> str:
+        token = secrets.token_urlsafe(16)
+        connection = self.get_connection()
+        connection.execute("INSERT INTO TokensSuppression (token, id_utilisateur) VALUES (?, ?)",
+                           (token, id_utilisateur))
+        connection.commit()
+        cursor = connection.cursor()
+        return token
+
+    def get_id_by_courriel(self, destinataire) -> int:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT id FROM Utilisateurs WHERE courriel == ?", (destinataire,))
+        id_utilisateur = cursor.fetchone()
+        if id_utilisateur:
+            return id_utilisateur[0]
+        else:
+            return -1
+
+    def verifier_token(self, id_utilisateur, token) -> bool:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT * FROM TokensSuppression "
+                       "WHERE id_utilisateur == ? AND token == ?", (id_utilisateur, token))
+        donnee = cursor.fetchone()
+        return True if donnee is not None else False
+
+    def get_all_etablissements_surveilles(self, id_utilisateur) -> list:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT etablissements FROM Utilisateurs WHERE id == ?", (id_utilisateur,))
+        donnnes = cursor.fetchone()
+        return json.loads(donnnes[0])

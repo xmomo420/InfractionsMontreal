@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block content %}
+	<div class="bg-primary-subtle container card m-4 p-4 text-center align-items-center">
+        <p class="text-start">Êtes-vous certain de retirer le restaurant de votre profil ? </p>
+        <form id="formulaireSuppression">
+            <input type="hidden" id="token" value="{{ token }}">
+            <input type="hidden" id="id_utilisateur" value="{{ id_utilisateur }}">
+            <input type="hidden" id="etablissement" value="{{ etablissement }}">
+            <button type="submit" class="btn btn-lg btn-danger">Confirmer</button>
+        </form>
+    </div>
+    <!-- Scripts associés -->
+    <script>const urlApiSuppression = "{{ url_for('supprimer_etablissement') }}";</script>
+    <script src="{{ url_for('static', filename="js/confirmation.js") }}"></script>
+{% endblock %}

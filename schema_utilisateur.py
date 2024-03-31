@@ -48,3 +48,22 @@ valider_login = {
     "required": ["courriel", "mot_de_passe"],
     "additionalProperties": False,
 }
+valider_suppression = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "token": {
+            "type": "string",
+            "minLength": 16
+        },
+        "id_utilisateur": {
+            "type": "number",
+        },
+        "etablissement": {
+            "type": "number",
+        }
+    },
+    "required": ["token", "id_utilisateur", "etablissement"],
+    "additionalProperties": False,
+}
+
