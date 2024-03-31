@@ -15,15 +15,18 @@ class DatabaseInfractions:
         if self.connection is not None:
             self.connection.close()
 
-    def creer_infraction(self, infraction):
+    def creer_infraction(self, infraction) -> bool:  # Retourne true si l'infraction n'existait pas
         cursor = self.get_connection().cursor()
         cursor.execute(
-            "INSERT INTO infractions (id_poursuite, id_business, date, description, adresse, date_jugement, etablissement, montant, proprietaire, ville, statut, date_statut, categorie) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO infractions (id_poursuite, id_business, date, description, adresse, date_jugement, "
+            "etablissement, montant, proprietaire, ville, statut, date_statut, categorie)"
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (id_poursuite) DO NOTHING",
             (infraction.id_poursuite, infraction.id_business, infraction.date, infraction.description,
              infraction.adresse, infraction.date_jugement, infraction.etablissement, infraction.montant,
              infraction.proprietaire, infraction.ville, infraction.statut, infraction.date_statut,
              infraction.categorie))
         self.get_connection().commit()
+        return cursor.lastrowid == int(infraction.id_poursuite)  # L'infraction existait déjà
 
     def get_infractions(self):
         cursor = self.get_connection().cursor()

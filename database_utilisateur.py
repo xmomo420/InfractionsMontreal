@@ -95,3 +95,21 @@ class DatabaseUtilisateur:
         connection.commit()
         cursor = connection.cursor()
         return cursor.rowcount > 0
+
+    def get_nom_by_courriel(self, courriel: str) -> str:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT prenom, nom FROM Utilisateurs WHERE courriel = ?", (courriel,))
+        donnee = cursor.fetchone()
+        return donnee[0] + ' ' + donnee[1]
+
+    def get_courriels_by_business_id(self, id_business: int) -> list:
+        cursor = self.get_connection().cursor()
+        cursor.execute(
+            "SELECT courriel FROM Utilisateurs, json_each(Utilisateurs.etablissements) "
+            "AS etab WHERE etab.value = ?", (int(id_business),))
+        donnees = cursor.fetchall()
+        courriels = []
+        for donnee in donnees:
+            if donnee:
+                courriels.append(donnee[0])
+        return courriels

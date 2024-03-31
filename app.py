@@ -2,6 +2,7 @@ import json
 import os
 import secrets
 from functools import wraps
+from typing import List
 
 from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for, session, abort
 from flask_mail import Mail, Message
@@ -22,6 +23,12 @@ import csv
 
 app = Flask(__name__, static_url_path="", static_folder="static")
 schema_utilisateur = JsonSchema(app)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'infractionsmontreal@gmail.com'
+app.config['MAIL_PASSWORD'] = 'ntppawpearajyjpl'
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
 mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
@@ -60,7 +67,7 @@ def home():
     try:
         infractions = get_db_infractions().get_infractions()
         if len(infractions) == 0:
-            return 'Aucune infraction trouvée', 404
+            return "Aucune données disponible", 404
         else:
             return render_template('accueil.html',
                                    message=request.args.get('message', None),
@@ -70,7 +77,6 @@ def home():
                 , 500)
 
 
-# Cette route permet de recuperer les donnees du fichier csv et les insere dans la base de donnees  A1
 @app.route('/api/infractions-csv-to-db')
 def index():
     with app.app_context():  # Envelopper le code dans un contexte d'application Flask
@@ -81,19 +87,21 @@ def index():
 
             csv_data = response.content.decode('utf-8')
             csv_reader = csv.DictReader(StringIO(csv_data))
-
             for row in csv_reader:
                 date = datetime.strptime(row['date'], '%Y%m%d').date()
                 date_jugement = datetime.strptime(
                     row['date_jugement'], '%Y%m%d').date()
                 date_statut = datetime.strptime(
                     row['date_statut'], '%Y%m%d').date()
-                infraction = Infractions(None, row['id_poursuite'], row['business_id'], date, row['description'],
+                infraction = Infractions(row['id_poursuite'], row['business_id'], date, row['description'],
                                          row['adresse'], date_jugement,
                                          row['etablissement'], row['montant'], row['proprietaire'], row['ville'],
                                          row['statut'], date_statut, row['categorie'])
-                get_db_infractions().creer_infraction(infraction)
-                print('Insertion de l\'infraction')
+                # TODO : Retourner une liste avec toutes les nouvelles infractions ajoutées
+                if get_db_infractions().creer_infraction(infraction):
+                    destinataires = get_db_utilisateurs().get_courriels_by_business_id(infraction.id_business)
+                    if len(destinataires) != 0:
+                        envoyer_courriel(destinataires, infraction)
             return 'La base de données a été mise à jour avec succès!', 201
         except Exception as e:
             return f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}', 500
@@ -334,3 +342,14 @@ def logout():
     message_logout = "Vous avez été déconnecté avec succès"
     return redirect(url_for('home', message=message_logout),
                     302)
+
+
+def envoyer_courriel(destinataires: list, infraction: Infractions):
+    objet = "Nouvelle infraction détectée"
+    sender = app.config['MAIL_USERNAME']
+    for destinataire in destinataires:
+        nom_complet = get_db_utilisateurs().get_nom_by_courriel(destinataire)
+        message = Message(subject=objet, sender=sender, recipients=[destinataire])
+        message.html = render_template('courriel.html', nom_complet=nom_complet,
+                                       infraction=infraction)
+        mail.send(message)
