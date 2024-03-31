@@ -63,3 +63,52 @@ $(document).ready(function() {
         }
     });
 });
+
+$(document).ready(function() {
+    $('#formulairePlainte').on('submit', function(event) {
+        event.preventDefault();
+        let etablissement = $('#etablissement').val();
+        let adresse = $('#adresse').val();
+        let ville = $('#ville').val();
+        let date_visite = $('#date_visite_client').val();
+        let nom = $('#nom_client').val();
+        let prenom = $('#prenom_client').val();
+        let description = $('#description_probleme').val();
+
+        let json = {
+            etablissement: etablissement,
+            adresse: adresse,
+            ville: ville,
+            date_visite_client: date_visite,
+            nom_client: nom,
+            prenom_client: prenom,
+            description_probleme: description
+        }
+
+        fetch('/api/demande-inspections', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(json)
+
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data) {
+                console.log(data.message);
+                $('#message').html('Demande envoyée avec succès');
+                $('#message').addClass('alert alert-success');
+            }else{
+                $('#message').html('Erreur lors de l\'envoi de la demande');
+                $('#message').addClass('alert alert-danger');
+            }
+
+        })
+        .catch(error => {
+            console.error('Erreur :', error);
+        });
+    });
+});
+
+

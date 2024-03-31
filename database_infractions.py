@@ -1,5 +1,6 @@
 import sqlite3
 from infractions import Infractions
+from demande_inspection import Inspection
 
 
 class DatabaseInfractions:
@@ -66,3 +67,16 @@ class DatabaseInfractions:
         cursor.execute("SELECT etablissement FROM Infractions WHERE id_business == ?", (id_business,))
         donnees = cursor.fetchone()
         return donnees[0]
+
+    def inserer_plainte(self, plainte):
+        cursor = self.get_connection().cursor()
+        cursor.execute(
+            "INSERT INTO Demande_inspection (etablissement, adresse, ville, date_visite, nom_client, prenom_client, description) VALUES (?,?,?,?,?,?,?)",
+            (plainte.etablissement, plainte.adresse, plainte.ville, plainte.date_visite_client, plainte.nom_client,
+             plainte.prenom_client, plainte.description_probleme))
+        self.get_connection().commit()
+        cursor = cursor.execute("SELECT last_insert_rowid()")
+        result = cursor.fetchall()
+        plainte.id = result[0][0]
+        return plainte
+

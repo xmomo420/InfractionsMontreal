@@ -185,7 +185,7 @@ pre code {
   "error": "Une erreur interne s&#39;est produite."
 }
 </code></pre></div><h2>HTTP status code <a href="http://httpstatus.es/400:champs_manquant" target="_blank">400:champs_manquant</a></h2><p>Champ manquant, tous les champs doivent être remplis et respecter les critères</p><h3>Body</h3><p><strong>Media type</strong>: application/json</p><p><strong>Type</strong>: any</p><p><strong>Example</strong>:</p><div class="examples"><pre><code>{
-  "&#39;date_naissance&#39; is a required property"
+  "&#39;mot_de_passe&#39; is a required property"
 }
 </code></pre></div><h2>HTTP status code <a href="http://httpstatus.es/400:mauvais type" target="_blank">400:mauvais type</a></h2><p>Champ du mauvais type</p><h3>Body</h3><p><strong>Media type</strong>: application/json</p><p><strong>Type</strong>: any</p><p><strong>Example</strong>:</p><div class="examples"><pre><code>{
   "12 is not of type &#39;string&#39;"
@@ -217,4 +217,22 @@ pre code {
 </code></pre></div><h2>HTTP status code <a href="http://httpstatus.es/500" target="_blank">500</a></h2><p>Une erreur interne s&#39;est produite. L&#39;erreur a été signalée à l&#39;équipe de développement.</p><h3>Body</h3><p><strong>Media type</strong>: application/json</p><p><strong>Type</strong>: any</p><p><strong>Example</strong>:</p><div class="examples"><pre><code>{
   "error": "Une erreur interne s&#39;est produite."
 }
-</code></pre></div></div></div></div></div></div></div></div></div></div></div></div><div class="col-md-3"><div id="sidebar" class="hidden-print affix" role="complementary"><ul class="nav nav-pills nav-stacked"><li><a href="#api_inscription">/api/inscription</a></li><li><a href="#api_contraventions">/api/contraventions</a></li></ul></div></div></div></div></body></html>
+</code></pre></div></div></div></div></div></div></div></div></div></div></div><div class="panel panel-default"><div class="panel-heading"><h3 id="api_demande_inspections" class="panel-title">/api/demande-inspections</h3></div><div class="panel-body"><div class="panel-group"><div class="panel panel-white resource-modal"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_api_demande_inspections"><span class="parent"></span>/api/demande-inspections</a> <span class="methods"><a href="#api_demande_inspections_post"><span class="badge badge_post">post</span></a></span></h4></div><div id="panel_api_demande_inspections" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#api_demande_inspections_post'" class="list-group-item"><span class="badge badge_post">post</span><div class="method_description"><p>L&#39;utilisateur envoie une plainte pour un établissement</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="api_demande_inspections_post"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_post">post</span> <span class="parent"></span>/api/demande-inspections</h4></div><div class="modal-body"><div class="alert alert-info"><p>L&#39;utilisateur envoie une plainte pour un établissement</p></div><ul class="nav nav-tabs"><li class="active"><a href="#api_demande_inspections_post_request" data-toggle="tab">Request</a></li><li><a href="#api_demande_inspections_post_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="api_demande_inspections_post_request"><h3>Body</h3><p><strong>Media type</strong>: application/json</p><p><strong>Type</strong>: object</p><strong>Properties</strong><ul><li><strong>id</strong>: <em><span class="required">required</span>(integer)</em></li><li><strong>etablissement</strong>: <em><span class="required">required</span>(string)</em></li><li><strong>adresse</strong>: <em><span class="required">required</span>(string)</em></li><li><strong>date_visite_client</strong>: <em><span class="required">required</span>(string)</em></li><li><strong>nom_client</strong>: <em><span class="required">required</span>(string)</em></li><li><strong>prenom_client</strong>: <em><span class="required">required</span>(string)</em></li><li><strong>description_probleme</strong>: <em><span class="required">required</span>(string)</em></li></ul><p><strong>Example</strong>:</p><div class="examples"><pre><code>{
+  "id": 1,
+  "etablissement": "Restaurant XYZ",
+  "adresse": "123 Rue ABC",
+  "date_visite_client": "2022-01-01",
+  "nom_client": "Doe",
+  "prenom_client": "John",
+  "description_probleme": "Problème XYZ"
+}
+</code></pre></div></div><div class="tab-pane" id="api_demande_inspections_post_response"><h2>HTTP status code <a href="http://httpstatus.es/201" target="_blank">201</a></h2><h3>Body</h3><p><strong>Media type</strong>: application/json</p><p><strong>Type</strong>: any</p><p><strong>Example</strong>:</p><div class="examples"><pre><code>{
+  "message": "La plainte pour l&#39;établissement a été envoyée avec succès."
+}
+</code></pre></div><h2>HTTP status code <a href="http://httpstatus.es/400" target="_blank">400</a></h2><p>Champ manquant, tous les champs doivent être remplis et respecter les critères</p><h3>Body</h3><p><strong>Media type</strong>: application/json</p><p><strong>Type</strong>: any</p><p><strong>Example</strong>:</p><div class="examples"><pre><code>{
+  "error": "Le formulaire n&#39;a pas été rempli correctement, veuillez remplir tous les champs et respecter les critères"
+}
+</code></pre></div><h2>HTTP status code <a href="http://httpstatus.es/500" target="_blank">500</a></h2><p>Une erreur interne s&#39;est produite. L&#39;erreur a été signalée à l&#39;équipe de développement.</p><h3>Body</h3><p><strong>Media type</strong>: application/json</p><p><strong>Type</strong>: any</p><p><strong>Example</strong>:</p><div class="examples"><pre><code>{
+  "error": "Une erreur interne s&#39;est produite. L&#39;erreur a été signalée à l&#39;équipe de développement."
+}
+</code></pre></div></div></div></div></div></div></div></div></div></div></div></div><div class="col-md-3"><div id="sidebar" class="hidden-print affix" role="complementary"><ul class="nav nav-pills nav-stacked"><li><a href="#api_inscription">/api/inscription</a></li><li><a href="#api_contraventions">/api/contraventions</a></li><li><a href="#api_demande_inspections">/api/demande-inspections</a></li></ul></div></div></div></div></body></html>

@@ -7,11 +7,13 @@ from flask import Flask, g, redirect, render_template, request, url_for, jsonify
 from flask_mail import Mail, Message
 import requests
 from schema_utilisateur import valider_nouvel_utilisateur, valider_login
+from schema_inspection import inspection_schema
 from flask_json_schema import JsonValidationError, JsonSchema
 from database_infractions import DatabaseInfractions
 from database_utilisateur import DatabaseUtilisateur
 from infractions import Infractions
 from utilisateur import Utilisateur
+from demande_inspection import Inspection
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from io import StringIO
@@ -22,6 +24,7 @@ import csv
 
 app = Flask(__name__, static_url_path="", static_folder="static")
 schema_utilisateur = JsonSchema(app)
+schema_inspection = JsonSchema(app)
 mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
@@ -334,3 +337,23 @@ def logout():
     message_logout = "Vous avez été déconnecté avec succès"
     return redirect(url_for('home', message=message_logout),
                     302)
+
+
+
+@app.route('/api/demande-inspections', methods=['POST'])
+@schema_inspection.validate(inspection_schema)
+def demande_inspections():
+    try:
+        data = request.get_json()
+        inspection = Inspection(None, data['etablissement'], data['adresse'], data['ville'], data['date_visite_client'], data['nom_client'], data['prenom_client'], data['description_probleme'])
+        inspection = get_db_infractions().inserer_plainte(inspection)
+        return jsonify(inspection.asDictionary()), 201
+    except Exception as e:
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
+
+
+
+@app.route('/plainte')
+def plainte():
+    return render_template('plainte.html', nom_page='Plainte'), 200
