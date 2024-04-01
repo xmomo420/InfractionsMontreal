@@ -39,9 +39,8 @@ requests-oauthlib==2.0.0
 rpds-py==0.18.0
 rsa==4.9
 six==1.16.0
+tweepy==4.14.0
 tzlocal==5.2
 uritemplate==4.1.1
 urllib3==2.2.1
 Werkzeug==3.0.1
-
-tweepy~=4.14.0

@@ -2,6 +2,7 @@
     background: url(../images/icone-twitter.png) no-repeat;
     background-size: 150%;
     background-position: center;
+    border-radius: 50%;
     width: 40px;
     height: 40px;
 }
