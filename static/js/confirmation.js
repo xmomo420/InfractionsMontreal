@@ -1,4 +1,5 @@
 const MESSAGE_ERREUR_500 = "Erreur lors de la soumission du formulaire:";
+const MESSAGE_SUPPRESSION_REUSSI = "Votre profil a été mis-à-jour correctement\nVous pouvez fermer cette page";
 function mettreListeAJour(event) {
     event.preventDefault();
     const formulaire = {
@@ -15,12 +16,17 @@ function mettreListeAJour(event) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data.message);
+        let conteneurMessage = document.getElementById("conteneurMessage");
+        let contenuMessage = document.getElementById("contenuMessage");
+        let conteneurPage = document.getElementById("conteneurPage");
+        conteneurMessage.style.display = "block";
         if (data.code === 201) {
-            // TODO : Modifier le document : "Vous pouvez fermer cette page"
-            window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&pp=ygUXbmV2ZXIgZ29ubmEgZ2l2ZSB5b3UgdXA%3D";
+            contenuMessage.innerText = MESSAGE_SUPPRESSION_REUSSI;
+            conteneurPage.style.display = "none";
         } else {
-            // TODO :
+            conteneurMessage.classList.remove("alert-success");
+            conteneurMessage.classList.add("alert-danger");
+            contenuMessage.innerText = data.message;
         }
     })
     .catch(error => {

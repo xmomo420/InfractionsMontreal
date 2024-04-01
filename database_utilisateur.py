@@ -104,7 +104,7 @@ class DatabaseUtilisateur:
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT prenom, nom FROM Utilisateurs WHERE courriel = ?", (courriel,))
         donnee = cursor.fetchone()
-        return donnee[0] + ' ' + donnee[1]
+        return donnee[0] + ' ' + donnee[1] if donnee else ''
 
     def get_courriels_by_business_id(self, id_business: int) -> list:
         cursor = self.get_connection().cursor()
@@ -126,6 +126,12 @@ class DatabaseUtilisateur:
         connection.commit()
         cursor = connection.cursor()
         return token
+
+    def supprimer_token(self, token: str, id_utilisateur: int):
+        connection = self.get_connection()
+        connection.execute("DELETE FROM TokensSuppression WHERE token = ? AND id_utilisateur = ?",
+                           (token, id_utilisateur))
+        connection.commit()
 
     def get_id_by_courriel(self, destinataire) -> int:
         cursor = self.get_connection().cursor()

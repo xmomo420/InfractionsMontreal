@@ -14,12 +14,13 @@ from database_utilisateur import DatabaseUtilisateur
 from infractions import Infractions
 from utilisateur import Utilisateur
 from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import StringIO
 import base64
 import hashlib
 import uuid
 import csv
+from keys import client
 
 app = Flask(__name__, static_url_path="", static_folder="static")
 schema_utilisateur = JsonSchema(app)
@@ -29,6 +30,7 @@ app.config['MAIL_USERNAME'] = 'infractionsmontreal@gmail.com'
 app.config['MAIL_PASSWORD'] = 'ntppawpearajyjpl'
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
+app.config['DESTINATAIRE_CORRECTION'] = 'destinataire5190@gmail.com'
 mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
@@ -76,6 +78,24 @@ def home():
                 , 500)
 
 
+def envoyer_courriel(infractions: List[Infractions]):
+    objet = "Nouvelle(s) infraction(s) détectée(s)"
+    sender = app.config['MAIL_USERNAME']
+    destinataire = app.config['DESTINATAIRE_CORRECTION']
+    nom_complet = get_db_utilisateurs().get_nom_by_courriel(destinataire)
+    message = Message(subject=objet, sender=sender, recipients=[destinataire])
+    message.html = render_template('courriel_infractions.html', nom_complet=nom_complet,
+                                   infractions=infractions)
+    mail.send(message)
+
+
+def publier_tweet(infraction: Infractions):
+    contenu_tweet = (f"Nouvelle infraction :\n"
+                     f"{infraction.etablissement}, {infraction.adresse}, "
+                     f"{infraction.date}, {infraction.montant}")
+    client.create_tweet(text=contenu_tweet)
+
+
 @app.route('/api/infractions-csv-to-db')
 def index():
     with app.app_context():  # Envelopper le code dans un contexte d'application Flask
@@ -84,7 +104,7 @@ def index():
                    '-b208-d8744dca8fc6/download/violations.csv')
             response = requests.get(url)
             response.raise_for_status()
-
+            liste_infractions = []
             csv_data = response.content.decode('utf-8')
             csv_reader = csv.DictReader(StringIO(csv_data))
             for row in csv_reader:
@@ -98,9 +118,13 @@ def index():
                                          row['etablissement'], row['montant'], row['proprietaire'], row['ville'],
                                          row['statut'], date_statut, row['categorie'])
                 if get_db_infractions().creer_infraction(infraction):
+                    liste_infractions.append(infraction)
                     destinataires = get_db_utilisateurs().get_courriels_by_business_id(infraction.id_business)
                     if len(destinataires) != 0:
-                        envoyer_courriel(destinataires, infraction)
+                        envoyer_courriel_etablissement(destinataires, infraction)
+            envoyer_courriel(liste_infractions)
+            for infraction in liste_infractions:
+                publier_tweet(infraction)
             return 'La base de données a été mise à jour avec succès!', 201
         except Exception as e:
             return f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}', 500
@@ -342,7 +366,7 @@ def logout():
                     302)
 
 
-def envoyer_courriel(destinataires: list, infraction: Infractions):
+def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions):
     objet = "Nouvelle infraction détectée"
     sender = app.config['MAIL_USERNAME']
     for destinataire in destinataires:
@@ -350,20 +374,31 @@ def envoyer_courriel(destinataires: list, infraction: Infractions):
         message = Message(subject=objet, sender=sender, recipients=[destinataire])
         id_utilisateur = get_db_utilisateurs().get_id_by_courriel(destinataire)
         token = generer_token(id_utilisateur)
-        # TODO : Ajouter un scheduler pour supprimer le token après 5 minutes
-        # TODO : token et id_utilisateur
-        message.html = render_template('courriel.html', nom_complet=nom_complet,
+        message.html = render_template('courriel_etablissement.html', nom_complet=nom_complet,
                                        infraction=infraction, id_utilisateur=id_utilisateur, token=token,
                                        etablissement=infraction.id_business)
         mail.send(message)
+        # Supprimer le token après 1 semaine
+        moment_expiration = datetime.now() + timedelta(days=7)
+        scheduler.add_job(get_db_utilisateurs().supprimer_token, 'date', run_date=moment_expiration,
+                          args=[token, id_utilisateur])
 
 
 @app.route('/confirmer-suppression/<id_utilisateur>&<token>&<etablissement>')
 def confirmer_suppression(id_utilisateur, token, etablissement):
     if get_db_utilisateurs().verifier_token(id_utilisateur, token):
+        donnees = get_db_infractions().get_adresse_ville_etablissement(etablissement)
+        nom_etablissement = donnees[0]
+        adresse = donnees[1]
+        ville = donnees[2]
+        # Supprimer le token 5 minute après l'accès à cette route
+        moment_expiration = datetime.now() + timedelta(minutes=5)
+        scheduler.add_job(get_db_utilisateurs().supprimer_token, 'date', run_date=moment_expiration,
+                          args=[token, id_utilisateur])
         return render_template('confirmation_suppression.html',
                                id_utilisateur=id_utilisateur, token=token,
-                               etablissement=etablissement, nom_page='Confirmer suppression'), 200
+                               etablissement=etablissement, nom_etablissement=nom_etablissement,
+                               adresse=adresse, ville=ville, nom_page='Confirmer suppression'), 200
     else:
         abort(403)
 
@@ -385,14 +420,18 @@ def supprimer_etablissement():
         if get_db_utilisateurs().verifier_token(id_utilisateur, token):
             _etablissement = data['etablissement']
             etablissements_surveilles = get_db_utilisateurs().get_all_etablissements_surveilles(id_utilisateur)
-            etablissements_surveilles.remove(_etablissement)
+            if _etablissement in etablissements_surveilles:
+                etablissements_surveilles.remove(_etablissement)
             get_db_utilisateurs().modifier_utilisateur(id_utilisateur, etablissements_surveilles, None)
             message = "L'établissement a été supprimé de votre profil"
             code = 201
+            get_db_utilisateurs().supprimer_token(token, id_utilisateur)
         else:
-            message = "Le jeton d'authentification fourni est inalide"
+            message = "Le jeton d'authentification fourni est invalide ou a expiré"
             code = 403
         return jsonify({"message": message, "code": code}), code
     except Exception as e:
         return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
                              "signalée à l'équipe de développement."), 500
+
+# TODO : Gestion des erreurs (404, 403, 500, etc.)

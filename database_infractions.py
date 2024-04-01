@@ -69,3 +69,10 @@ class DatabaseInfractions:
         cursor.execute("SELECT etablissement FROM Infractions WHERE id_business == ?", (id_business,))
         donnees = cursor.fetchone()
         return donnees[0]
+
+    def get_adresse_ville_etablissement(self, id_business) -> tuple:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT etablissement, adresse, ville FROM infractions WHERE id_business = ? LIMIT 1",
+                       (id_business,))
+        donnees = cursor.fetchone()
+        return donnees
