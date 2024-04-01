@@ -85,7 +85,7 @@ $(document).ready(function() {
             description_probleme: description
         }
 
-        fetch('/api/demande-inspections', {
+        fetch('/api/demande-inspection', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -96,10 +96,17 @@ $(document).ready(function() {
         .then(response => response.json())
         .then(data => {
             if (data) {
-                console.log(data.message);
                 $('#message').html('Demande envoyée avec succès');
                 $('#message').addClass('alert alert-success');
-            }else{
+                // Réinitialiser les champs du formulaire
+                $('#etablissement').val('');
+                $('#adresse').val('');
+                $('#ville').val('');
+                $('#date_visite_client').val('');
+                $('#nom_client').val('');
+                $('#prenom_client').val('');
+                $('#description_probleme').val('');
+            } else {
                 $('#message').html('Erreur lors de l\'envoi de la demande');
                 $('#message').addClass('alert alert-danger');
             }

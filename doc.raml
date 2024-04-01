@@ -218,3 +218,25 @@ types:
               {
                 "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
               }
+
+
+
+/api/supprimer-inspection/<int:id_inspection>:
+  delete:
+    description: Supprime une inspection
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "message": "L'inspection a été supprimée avec succès."
+              }
+      500:
+        description: Une erreur interne s'est produite.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
+              }

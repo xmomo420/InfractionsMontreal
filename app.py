@@ -340,7 +340,7 @@ def logout():
 
 
 
-@app.route('/api/demande-inspections', methods=['POST'])
+@app.route('/api/demande-inspection', methods=['POST'])
 @schema_inspection.validate(inspection_schema)
 def demande_inspections():
     try:
@@ -353,7 +353,19 @@ def demande_inspections():
                              "signalée à l'équipe de développement."), 500
 
 
+@app.route('/api/supprimer-inspection/<int:id_inspection>', methods=['DELETE'])
+def supprimer_inspection(id_inspection):
+    try:
+        get_db_infractions().supprimer_inspection(id_inspection)
+        return jsonify(message='L\'inspection a été supprimée avec succès.'), 200
+    except Exception as e:
+        print(e)
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
+
+
 
 @app.route('/plainte')
 def plainte():
     return render_template('plainte.html', nom_page='Plainte'), 200
+

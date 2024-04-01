@@ -80,3 +80,9 @@ class DatabaseInfractions:
         plainte.id = result[0][0]
         return plainte
 
+    def supprimer_inspection(self, id_inspection):
+        cursor = self.get_connection().cursor()
+        cursor.execute("DELETE FROM Demande_inspection WHERE id = ?", (id_inspection,))
+        self.get_connection().commit()
+
+
