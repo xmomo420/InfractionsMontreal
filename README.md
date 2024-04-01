@@ -17,7 +17,8 @@
 | bendourou.mohamed@uqam.ca   | Poulet420!         |
 | destinataire5190@gmail.com  | xDestinataire5190- |
 
-(Les informations de connexion pour la boîte courriel du destinaire sont les mêmes que celles indiquées ci-haut )
+<p style="text-align: justify; font-style: italic; font-weight: bold">(Les informations de connexion pour la boîte courriel du destinaire sont les mêmes que celles indiquées ci-haut )
+</p>
 
 ### Fonctionnalités : <span style="color: red;">130</span>/200
 
