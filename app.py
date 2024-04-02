@@ -73,6 +73,7 @@ def home():
         else:
             return render_template('accueil.html',
                                    message=request.args.get('message', None),
+                                   infractions=infractions,
                                    nom_page='Infractions Montréal'), 200
     except Exception as e:
         return (f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}'
