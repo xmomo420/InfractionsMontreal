@@ -18,12 +18,12 @@ $(document).ready(function() {
             });
 
             // Créer le tableau HTML
-            var html = '<table><tr><th>Etablissement</th><th>Occurrences</th></tr>';
+            var html = '<table><tr class="text-center"><th>Etablissement</th><th>Occurrences</th><th>Action</th></tr>';
             if (Object.keys(counts).length === 0) {
                 html += '<tr><td colspan="2">Aucun résultat</td></tr>';
             }
             for (var etablissement in counts) {
-                html += '<tr><td>' + etablissement + '</td><td>' + counts[etablissement] + '</td></tr>';
+                html += '<tr><td>' + etablissement + '</td><td>' + counts[etablissement] + '</td><td><button id="button-modifier" class="btn btn-outline-primary mt-3">Modifier</button></td><td><button id="button-supprimer" class="btn btn-outline-primary mt-3">Supprimer</button></td></tr>';
             }
             html += '</table>';
             $('#resultat-recherche').html(html);
@@ -31,6 +31,31 @@ $(document).ready(function() {
         .catch(error => {
             console.error('Erreur avec le serveur :', error);
         });
+    });
+});
+
+$(document).on('click', '#button-modifier', function(event) {
+    var etablissement = $(this).closest('tr').find('td:first').text();
+    console.log(etablissement);
+});
+
+$(document).on('click', '#button-supprimer', function(event) {
+    var etablissement = $(this).closest('tr').find('td:first').text();
+    var encodedEtablissement = encodeURIComponent(etablissement);
+
+    fetch('/api/supprimer-etablissement/' + etablissement, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        var userResponse = confirm('L\'établissement a été supprimé avec succès.');
+        if (userResponse) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Erreur avec le serveur :', error);
     });
 });
 

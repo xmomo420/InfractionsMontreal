@@ -240,3 +240,24 @@ types:
               {
                 "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
               }
+
+
+/api/supprimer-etablissement/<string:etablissement>:
+  delete:
+    description: Supprime un établissement
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "message": "L'établissement a été supprimé avec succès."
+              }
+      500:
+        description: Une erreur interne s'est produite.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
+              }

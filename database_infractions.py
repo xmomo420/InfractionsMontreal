@@ -86,3 +86,7 @@ class DatabaseInfractions:
         self.get_connection().commit()
 
 
+    def supprimer_etablissement(self, etablissement):
+        cursor = self.get_connection().cursor()
+        cursor.execute("DELETE FROM infractions WHERE etablissement = ?", (etablissement,))
+        self.get_connection().commit()

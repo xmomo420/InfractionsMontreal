@@ -15,6 +15,7 @@ from infractions import Infractions
 from utilisateur import Utilisateur
 from demande_inspection import Inspection
 from apscheduler.schedulers.background import BackgroundScheduler
+from urllib.parse import unquote
 from datetime import datetime
 from io import StringIO
 import base64
@@ -67,7 +68,7 @@ def home():
         else:
             return render_template('accueil.html',
                                    message=request.args.get('message', None),
-                                   nom_page='Infractions Montréal'), 200
+                                   nom_page='Infractions Montréal', infractions=infractions), 200
     except Exception as e:
         return (f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}'
                 , 500)
@@ -369,3 +370,27 @@ def supprimer_inspection(id_inspection):
 def plainte():
     return render_template('plainte.html', nom_page='Plainte'), 200
 
+
+@app.route('/api/supprimer-etablissement/<string:etablissement>', methods=['DELETE'])
+def supprimer_etablissement(etablissement):
+    etablissement = unquote(etablissement)
+    try:
+        get_db_infractions().supprimer_etablissement(etablissement)
+        return jsonify(message='L\'établissement a été supprimé avec succès.'), 200
+    except Exception as e:
+        print(e)
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
+
+
+@app.route('/api/modifier-etablissement/<string:etablissement>', methods=['PUT'])
+def modifier_etablissement(etablissement):
+    etablissement = unquote(etablissement)
+    try:
+        data = request.get_json()
+        # get_db_infractions().modifier_etablissement(etablissement, data['nouveau_nom'])
+        return jsonify(message='L\'établissement a été modifié avec succès.'), 200
+    except Exception as e:
+        print(e)
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
