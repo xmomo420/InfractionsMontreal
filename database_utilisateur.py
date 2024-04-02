@@ -118,19 +118,17 @@ class DatabaseUtilisateur:
                 courriels.append(donnee[0])
         return courriels
 
-    def generer_token(self, id_utilisateur) -> str:
-        token = secrets.token_urlsafe(16)
+    def generer_token(self, id_utilisateur: int, etablissement: int) -> str:
+        token = secrets.token_urlsafe(32)
         connection = self.get_connection()
-        connection.execute("INSERT INTO TokensSuppression (token, id_utilisateur) VALUES (?, ?)",
-                           (token, id_utilisateur))
+        connection.execute("INSERT INTO TokensSuppression (token, id_utilisateur, etablissement) VALUES (?, ?, ?)",
+                           (token, id_utilisateur, etablissement))
         connection.commit()
-        cursor = connection.cursor()
         return token
 
-    def supprimer_token(self, token: str, id_utilisateur: int):
+    def supprimer_token(self, token: str):
         connection = self.get_connection()
-        connection.execute("DELETE FROM TokensSuppression WHERE token = ? AND id_utilisateur = ?",
-                           (token, id_utilisateur))
+        connection.execute("DELETE FROM TokensSuppression WHERE token = ?", (token,))
         connection.commit()
 
     def get_id_by_courriel(self, destinataire) -> int:
@@ -142,12 +140,13 @@ class DatabaseUtilisateur:
         else:
             return -1
 
-    def verifier_token(self, id_utilisateur, token) -> bool:
+    def verifier_token(self, id_utilisateur: int, token: str, etablissement: int) -> bool:
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT * FROM TokensSuppression "
-                       "WHERE id_utilisateur == ? AND token == ?", (id_utilisateur, token))
+                       "WHERE id_utilisateur == ? AND token == ? AND etablissement == ?",
+                       (id_utilisateur, token, etablissement))
         donnee = cursor.fetchone()
-        return True if donnee is not None else False
+        return True if donnee else False
 
     def get_all_etablissements_surveilles(self, id_utilisateur) -> list:
         cursor = self.get_connection().cursor()

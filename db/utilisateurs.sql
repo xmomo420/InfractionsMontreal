@@ -18,6 +18,7 @@ CREATE TABLE Sessions (
 CREATE TABLE TokensSuppression (
     token VARCHAR(32) PRIMARY KEY,
     id_utilisateur INTEGER NOT NULL,
+    etablissement INTEGER NOT NULL,
     FOREIGN KEY (id_utilisateur) REFERENCES Utilisateurs(id)
 );
 

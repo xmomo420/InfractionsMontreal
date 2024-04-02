@@ -76,3 +76,10 @@ class DatabaseInfractions:
                        (id_business,))
         donnees = cursor.fetchone()
         return donnees
+
+    def get_infractions_etablissement(self) -> list or None:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT id_business, COUNT(*) AS occurences, etablissement FROM Infractions "
+                       "GROUP BY id_business, etablissement ORDER BY occurences DESC")
+        donnees = cursor.fetchall()
+        return donnees if len(donnees) > 0 else None

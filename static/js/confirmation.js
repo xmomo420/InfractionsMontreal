@@ -2,17 +2,8 @@ const MESSAGE_ERREUR_500 = "Erreur lors de la soumission du formulaire:";
 const MESSAGE_SUPPRESSION_REUSSI = "Votre profil a été mis-à-jour correctement\nVous pouvez fermer cette page";
 function mettreListeAJour(event) {
     event.preventDefault();
-    const formulaire = {
-        etablissement: parseInt(document.getElementById("etablissement").value, 10),
-        id_utilisateur: parseInt(document.getElementById("id_utilisateur").value, 10),
-        token: document.getElementById("token").value
-    };
     fetch(urlApiSuppression, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formulaire)
+        method: 'PATCH',
     })
     .then(response => response.json())
     .then(data => {
@@ -20,7 +11,7 @@ function mettreListeAJour(event) {
         let contenuMessage = document.getElementById("contenuMessage");
         let conteneurPage = document.getElementById("conteneurPage");
         conteneurMessage.style.display = "block";
-        if (data.code === 201) {
+        if (data.code === 200) {
             contenuMessage.innerText = MESSAGE_SUPPRESSION_REUSSI;
             conteneurPage.style.display = "none";
         } else {

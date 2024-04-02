@@ -1,6 +1,3 @@
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
 # Infractions Montréal
 
 ## Prérequis
@@ -20,7 +17,7 @@
 <p style="text-align: justify; font-style: italic; font-weight: bold">(Les informations de connexion pour la boîte courriel du destinaire sont les mêmes que celles indiquées ci-haut )
 </p>
 
-### Fonctionnalités : <span style="color: red;">130</span>/200
+### Fonctionnalités : <span style="color: red;">150</span>/200
 
 | Fonctionnalité | Statut                               |
 |----------------|--------------------------------------|
@@ -32,7 +29,9 @@
 | A6             | <span style="color: green;">✓</span> |
 | B1             | <span style="color: green;">✓</span> |
 | B2             | <span style="color: green;">✓</span> |
-| C1             | <span style="color: red;">✗</span>   |
+| C1             | <span style="color: green;">✓</span> |
+| C2             | <span style="color: green;">✓</span> |
+| C3             | <span style="color: green;">✓</span> |
 | D1             | <span style="color: red;">✗</span>   |
 | D2             | <span style="color: red;">✗</span>   |
 | D3             | <span style="color: red;">✗</span>   |

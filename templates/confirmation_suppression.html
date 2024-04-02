@@ -29,13 +29,12 @@
         </div>
         <hr class="bg-primary border border-dark border-4 card">
         <form enctype="multipart/form-data">
-            <input type="hidden" id="token" value="{{ token }}">
-            <input type="hidden" id="id_utilisateur" value="{{ id_utilisateur }}">
-            <input type="hidden" id="etablissement" value="{{ etablissement }}">
             <button type="submit" class="btn btn-lg btn-danger">Confirmer</button>
         </form>
     </div>
     <!-- Scripts associés -->
-    <script>const urlApiSuppression = "{{ url_for('supprimer_etablissement') }}";</script>
+    <script>
+        const urlApiSuppression = "{{ request.url_root }}/api/supprimer-etablissement/{{ id_utilisateur }}&{{ token }}&{{ etablissement }}"
+    </script>
     <script src="{{ url_for('static', filename="js/confirmation.js") }}"></script>
 {% endblock %}

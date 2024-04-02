@@ -1,13 +1,14 @@
+import io
 import json
 import os
 import secrets
 from functools import wraps
 from typing import List
-
-from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for, session, abort
+import xml.etree.ElementTree as ET
+from flask import Flask, g, redirect, render_template, request, url_for, jsonify, session, abort, make_response
 from flask_mail import Mail, Message
 import requests
-from schema_utilisateur import valider_nouvel_utilisateur, valider_login, valider_suppression
+from schema_utilisateur import valider_nouvel_utilisateur, valider_login
 from flask_json_schema import JsonValidationError, JsonSchema
 from database_infractions import DatabaseInfractions
 from database_utilisateur import DatabaseUtilisateur
@@ -120,9 +121,10 @@ def index():
                 if get_db_infractions().creer_infraction(infraction):
                     liste_infractions.append(infraction)
                     destinataires = get_db_utilisateurs().get_courriels_by_business_id(infraction.id_business)
-                    if len(destinataires) != 0:
+                    if len(destinataires) > 0:
                         envoyer_courriel_etablissement(destinataires, infraction)
-            envoyer_courriel(liste_infractions)
+            if len(liste_infractions) > 0:
+                envoyer_courriel(liste_infractions)
             for infraction in liste_infractions:
                 publier_tweet(infraction)
             return 'La base de données a été mise à jour avec succès!', 201
@@ -310,24 +312,27 @@ def fichier_valide(filename: str) -> bool:
 @app.route('/api/profil/modifer/<id>', methods=['PUT'])
 @authentification_requise
 def traitement_modifications(id):
-    nouvelle_photo = False
-    photo = request.files["photo"]
-    _etablissements = request.form["liste_etablissements"]
-    _etablissements = json.loads(_etablissements)
-    if photo.filename != '':
-        if fichier_valide(photo.filename):
+    if get_db_utilisateurs().get_utilisateur(id):
+        nouvelle_photo = False
+        photo = request.files["photo"]
+        _etablissements = request.form["liste_etablissements"]
+        _etablissements = json.loads(_etablissements)
+        if photo.filename != '':
+            if fichier_valide(photo.filename):
+                message = "Modifications apportées avec succès"
+                code = 200
+                nouvelle_photo = True
+                get_db_utilisateurs().modifier_utilisateur(id, _etablissements, photo)
+            else:
+                message = f"Erreur lors de la lecture du fichier transmis : \"{photo.filename}\""
+                code = 400
+        else:
             message = "Modifications apportées avec succès"
             code = 200
-            nouvelle_photo = True
-            get_db_utilisateurs().modifier_utilisateur(id, _etablissements, photo)
-        else:
-            message = f"Erreur lors de la lecture du fichier transmis : \"{photo.filename}\""
-            code = 400
+            get_db_utilisateurs().modifier_utilisateur(id, _etablissements, None)
+        return jsonify({"message": message, "code": code, "photo": nouvelle_photo}), code
     else:
-        message = "Modifications apportées avec succès"
-        code = 200
-        get_db_utilisateurs().modifier_utilisateur(id, _etablissements, None)
-    return jsonify({"message": message, "code": code, "photo": nouvelle_photo}), code
+        abort(404)
 
 
 @app.route('/login', methods=['GET'])
@@ -373,28 +378,29 @@ def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions)
         nom_complet = get_db_utilisateurs().get_nom_by_courriel(destinataire)
         message = Message(subject=objet, sender=sender, recipients=[destinataire])
         id_utilisateur = get_db_utilisateurs().get_id_by_courriel(destinataire)
-        token = generer_token(id_utilisateur)
+        token = generer_token(id_utilisateur, infraction.id_business)
         message.html = render_template('courriel_etablissement.html', nom_complet=nom_complet,
                                        infraction=infraction, id_utilisateur=id_utilisateur, token=token,
                                        etablissement=infraction.id_business)
         mail.send(message)
         # Supprimer le token après 1 semaine
         moment_expiration = datetime.now() + timedelta(days=7)
-        scheduler.add_job(get_db_utilisateurs().supprimer_token, 'date', run_date=moment_expiration,
-                          args=[token, id_utilisateur])
+        scheduler.add_job(supprimer_token, 'date', run_date=moment_expiration,
+                          args=[token])
 
 
 @app.route('/confirmer-suppression/<id_utilisateur>&<token>&<etablissement>')
 def confirmer_suppression(id_utilisateur, token, etablissement):
-    if get_db_utilisateurs().verifier_token(id_utilisateur, token):
+    if get_db_utilisateurs().verifier_token(id_utilisateur, token, etablissement):
         donnees = get_db_infractions().get_adresse_ville_etablissement(etablissement)
         nom_etablissement = donnees[0]
         adresse = donnees[1]
         ville = donnees[2]
         # Supprimer le token 5 minute après l'accès à cette route
         moment_expiration = datetime.now() + timedelta(minutes=5)
-        scheduler.add_job(get_db_utilisateurs().supprimer_token, 'date', run_date=moment_expiration,
-                          args=[token, id_utilisateur])
+        # TODO : Régler les problèmes de connection
+        scheduler.add_job(supprimer_token, 'date', run_date=moment_expiration,
+                          args=[token])
         return render_template('confirmation_suppression.html',
                                id_utilisateur=id_utilisateur, token=token,
                                etablissement=etablissement, nom_etablissement=nom_etablissement,
@@ -403,35 +409,77 @@ def confirmer_suppression(id_utilisateur, token, etablissement):
         abort(403)
 
 
-def generer_token(id_utilisateur) -> str or None:
+# TODO : Ajouter l'établissement comme attribut du token
+def generer_token(id_utilisateur: int, etablissement: int) -> str or None:
     if get_db_utilisateurs().get_utilisateur(id_utilisateur) is not None:
-        return get_db_utilisateurs().generer_token(id_utilisateur)
+        return get_db_utilisateurs().generer_token(id_utilisateur, etablissement)
     else:
         return None
 
 
-@app.route('/api/supprimer-etablissement', methods=["PUT"])
-@schema_utilisateur.validate(valider_suppression)
-def supprimer_etablissement():
-    try:
-        data = request.get_json()
-        id_utilisateur = data['id_utilisateur']
-        token = data['token']
-        if get_db_utilisateurs().verifier_token(id_utilisateur, token):
-            _etablissement = data['etablissement']
-            etablissements_surveilles = get_db_utilisateurs().get_all_etablissements_surveilles(id_utilisateur)
-            if _etablissement in etablissements_surveilles:
-                etablissements_surveilles.remove(_etablissement)
-            get_db_utilisateurs().modifier_utilisateur(id_utilisateur, etablissements_surveilles, None)
-            message = "L'établissement a été supprimé de votre profil"
-            code = 201
-            get_db_utilisateurs().supprimer_token(token, id_utilisateur)
-        else:
-            message = "Le jeton d'authentification fourni est invalide ou a expiré"
-            code = 403
-        return jsonify({"message": message, "code": code}), code
-    except Exception as e:
-        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
-                             "signalée à l'équipe de développement."), 500
+def supprimer_token(token: str):
+    get_db_utilisateurs().supprimer_token(token)
 
+
+@app.route('/api/supprimer-etablissement/<id_utilisateur>&<token>&<etablissement>', methods=["PATCH"])
+def supprimer_etablissement(id_utilisateur: int, token: str, etablissement: int):
+    if get_db_utilisateurs().verifier_token(id_utilisateur, token, etablissement):
+        etablissements_surveilles = get_db_utilisateurs().get_all_etablissements_surveilles(id_utilisateur)
+        if etablissement in etablissements_surveilles:
+            etablissements_surveilles.remove(etablissement)
+        get_db_utilisateurs().modifier_utilisateur(id_utilisateur, etablissements_surveilles, None)
+        message = "L'établissement a été supprimé de votre profil"
+        code = 200
+        supprimer_token(token)
+    else:
+        message = "Le jeton d'authentification fourni est invalide ou a expiré"
+        code = 403
+    return jsonify({"message": message, "code": code}), code
+
+
+@app.route('/api/infractions-etablissements/<format>', methods=['GET'])
+def infractions_etablissements(format):
+    etablissements = get_db_infractions().get_infractions_etablissement()
+    if etablissements:
+        if format == "json":
+            reponse_json = []
+            for _etablissement in etablissements:
+                reponse_json.append({
+                    "nom": _etablissement[2],
+                    "id": _etablissement[0],
+                    "nombre_infractions": _etablissement[1]
+                })
+            return jsonify(reponse_json), 200
+        elif format == "xml":
+            racine = ET.Element("etablissements")
+            # Ajouter les éléments à l'arbre XML
+            for _etablissement in etablissements:
+                etablissement_xml = ET.SubElement(racine, 'etablissement')
+                ET.SubElement(etablissement_xml, 'nom').text = _etablissement[2]
+                ET.SubElement(etablissement_xml, 'id').text = str(_etablissement[0])
+                ET.SubElement(etablissement_xml, 'nombre_infractions').text = str(_etablissement[1])
+            # Générer la réponse XML
+            xml_string = ET.tostring(racine, encoding='utf-8', method='xml')
+            # Créer une réponse avec le contenu XML et le type de contenu approprié
+            response = make_response(xml_string)
+            response.headers['Content-Type'] = 'application/xml'
+            return response, 200
+        elif format == "csv":
+            # Insérer le tuple qui représente le tires des colonnes
+            etablissements.insert(0, ("ID", "Nombre d'infractions", "Nom"))
+
+            # Créer le contenu CSV
+            donnees_csv = io.StringIO()
+            csv_writer = csv.writer(donnees_csv)
+            csv_writer.writerows(etablissements)
+
+            # Créer la réponse avec le contenu CSV
+            response = make_response(donnees_csv.getvalue())
+
+            # Spécifier l'encodage UTF-8 dans les en-têtes de la réponse
+            response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+            response.headers['Content-Disposition'] = 'attachment; filename=infractions.csv'
+            return response, 200
+        else:
+            abort(404)
 # TODO : Gestion des erreurs (404, 403, 500, etc.)
