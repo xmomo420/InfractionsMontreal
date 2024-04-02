@@ -39,7 +39,11 @@ types:
           application/json:
             example: |
               {
+<<<<<<< HEAD
+                "message": "L'utilisateur Mario Lemieux a été ajouté avec succès."
+=======
                 "message": "L'utilisateur Aaron Osorio a été ajouté avec succès."
+>>>>>>> add59ff4528a55752ff19711a12abcb03f1085de
               }
       400:champs_manquant:
         description: Champ manquant, tous les champs doivent être remplis et respecter les critères
@@ -47,7 +51,11 @@ types:
           application/json:
             example: |
               {
+<<<<<<< HEAD
+                "'mot_de_passe' is a required property"
+=======
                 "'date_naissance' is a required property"
+>>>>>>> add59ff4528a55752ff19711a12abcb03f1085de
               }
       400:mauvais type:
         description: Champ du mauvais type
@@ -66,6 +74,11 @@ types:
                 "error": "Une erreur interne s'est produite."
               }
 
+<<<<<<< HEAD
+/doc:
+  get:
+    description: Documentation de l'API
+=======
 types:
   Infraction:
     type: object
@@ -163,3 +176,4 @@ types:
               {
                 "error": "Une erreur interne s'est produite."
               }
+>>>>>>> add59ff4528a55752ff19711a12abcb03f1085de
