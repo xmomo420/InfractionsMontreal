@@ -35,6 +35,13 @@ app.config['DESTINATAIRE_CORRECTION'] = 'destinataire5190@gmail.com'
 mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
+MESSAGE_ERREUR_500 = 'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement'
+
+
+@app.route('/favicon.ico', methods=["GET"])
+def favicon():
+    return app.send_static_file('images/favicon.ico')
+
 
 @app.errorhandler(JsonValidationError)
 def validation_error(e):
@@ -76,8 +83,7 @@ def home():
                                    infractions=infractions,
                                    nom_page='Infractions Montréal'), 200
     except Exception as e:
-        return (f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}'
-                , 500)
+        return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
 
 def envoyer_courriel(infractions: List[Infractions]):
@@ -125,12 +131,18 @@ def index():
                     if len(destinataires) > 0:
                         envoyer_courriel_etablissement(destinataires, infraction)
             if len(liste_infractions) > 0:
+                code = 201
                 envoyer_courriel(liste_infractions)
+                message = (f"La base de données a été mise à jour avec succès !\n"
+                           f"{len(liste_infractions)} nouvelle(s) infraction(s) ont été rajoutée(s)")
+            else:
+                code = 200  # Code 200, car aucune nouvelles rangées ont été insérées
+                message = 'La base de données est déjà à jour'
             for infraction in liste_infractions:
                 publier_tweet(infraction)
-            return 'La base de données a été mise à jour avec succès!', 201
+            return message, code
         except Exception as e:
-            return f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}', 500
+            return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
 
 # Ce script permet de lancer le scheduler qui permet de mettre a jour la base de donnees chaque jour a minuit A3
@@ -154,7 +166,7 @@ def recherche():
             return 'Aucune infraction trouvée', 404
         return render_template('infraction.html', infractions=infractions), 200
     except Exception as e:
-        return f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}', 500
+        return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
 
 # Cette route permet de recuperer les infractions selon une periode donnee et retourne les resultats en format json A4
@@ -265,8 +277,7 @@ def traitement_inscription():
         return jsonify({"message": message, "code": code}), code
 
     except Exception as e:
-        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
-                             "signalée à l'équipe de développement."), 500
+        return jsonify(error=f"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
 
 @app.route('/profil', methods=['GET'])
@@ -356,8 +367,7 @@ def traitement_login():
             message = "Combinaison courriel et mot de passe invalide"
             return jsonify({'message': message}), 200
     except Exception as e:
-        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
-                             "signalée à l'équipe de développement."), 500
+        return jsonify(error=f"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
 
 @app.route('/logout')
@@ -410,7 +420,6 @@ def confirmer_suppression(id_utilisateur, token, etablissement):
         abort(403)
 
 
-# TODO : Ajouter l'établissement comme attribut du token
 def generer_token(id_utilisateur: int, etablissement: int) -> str or None:
     if get_db_utilisateurs().get_utilisateur(id_utilisateur) is not None:
         return get_db_utilisateurs().generer_token(id_utilisateur, etablissement)
@@ -419,15 +428,16 @@ def generer_token(id_utilisateur: int, etablissement: int) -> str or None:
 
 
 def supprimer_token(token: str):
-    get_db_utilisateurs().supprimer_token(token)
+    with app.app_context():  # Envelopper le code dans un contexte d'application Flask
+        get_db_utilisateurs().supprimer_token(token)
 
 
 @app.route('/api/supprimer-etablissement/<id_utilisateur>&<token>&<etablissement>', methods=["PATCH"])
 def supprimer_etablissement(id_utilisateur: int, token: str, etablissement: int):
     if get_db_utilisateurs().verifier_token(id_utilisateur, token, etablissement):
         etablissements_surveilles = get_db_utilisateurs().get_all_etablissements_surveilles(id_utilisateur)
-        if etablissement in etablissements_surveilles:
-            etablissements_surveilles.remove(etablissement)
+        if int(etablissement) in etablissements_surveilles:
+            etablissements_surveilles.remove(int(etablissement))
         get_db_utilisateurs().modifier_utilisateur(id_utilisateur, etablissements_surveilles, None)
         message = "L'établissement a été supprimé de votre profil"
         code = 200
