@@ -30,7 +30,7 @@
             <p>{{ infraction.description }}</p>
             <hr class="card border border-info border-4">
             <p class>Cliquer sur le bouton ci-dessous si vous ne voulez plus recevoir de courriels pour cet établissement</p>
-            <p class="text-center text-danger-emphasis">(Ce lien est valide pendant 1 semaine)</p>
+            <p class="text-center text-danger-emphasis">(Ce lien est valide pendant 1 semaine et expirera 5 minutes après sa première utilisation)</p>
         </div>
         <a href="{{ request.url_root }}confirmer-suppression/{{ id_utilisateur }}&{{ token }}&{{ etablissement }}">
             <button class="btn btn-lg btn-danger">Désactiver</button>
