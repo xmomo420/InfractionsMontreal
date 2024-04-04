@@ -1,4 +1,5 @@
 import hashlib
+import secrets
 import sqlite3
 import json
 
@@ -58,13 +59,16 @@ class DatabaseUtilisateur:
         donnee = cursor.fetchone()
         return donnee[0]
 
-    def get_utilisateur(self, _id) -> Utilisateur:
+    def get_utilisateur(self, _id) -> Utilisateur or None:
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT * FROM Utilisateurs WHERE id == ?", (_id,))
         donnee = cursor.fetchone()
-        liste_etablissements = json.loads(donnee[7])
-        return Utilisateur(_id=donnee[0], prenom=donnee[1], nom=donnee[2], courriel=donnee[3], photo=donnee[6],
-                           etablissements=liste_etablissements, salt=None, _hash=None)
+        if donnee:
+            liste_etablissements = json.loads(donnee[7])
+            return Utilisateur(_id=donnee[0], prenom=donnee[1], nom=donnee[2], courriel=donnee[3], photo=donnee[6],
+                               etablissements=liste_etablissements, salt=None, _hash=None)
+        else:
+            return None
 
     def authentifier(self, courriel: str, mot_de_passe: str) -> int:
         cursor = self.get_connection().cursor()
@@ -95,3 +99,57 @@ class DatabaseUtilisateur:
         connection.commit()
         cursor = connection.cursor()
         return cursor.rowcount > 0
+
+    def get_nom_by_courriel(self, courriel: str) -> str:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT prenom, nom FROM Utilisateurs WHERE courriel = ?", (courriel,))
+        donnee = cursor.fetchone()
+        return donnee[0] + ' ' + donnee[1] if donnee else ''
+
+    def get_courriels_by_business_id(self, id_business: int) -> list:
+        cursor = self.get_connection().cursor()
+        cursor.execute(
+            "SELECT courriel FROM Utilisateurs, json_each(Utilisateurs.etablissements) "
+            "AS etab WHERE etab.value = ?", (int(id_business),))
+        donnees = cursor.fetchall()
+        courriels = []
+        for donnee in donnees:
+            if donnee:
+                courriels.append(donnee[0])
+        return courriels
+
+    def generer_token(self, id_utilisateur: int, etablissement: int) -> str:
+        token = secrets.token_urlsafe(32)
+        connection = self.get_connection()
+        connection.execute("INSERT INTO TokensSuppression (token, id_utilisateur, etablissement) VALUES (?, ?, ?)",
+                           (token, id_utilisateur, etablissement))
+        connection.commit()
+        return token
+
+    def supprimer_token(self, token: str):
+        connection = self.get_connection()
+        connection.execute("DELETE FROM TokensSuppression WHERE token = ?", (token,))
+        connection.commit()
+
+    def get_id_by_courriel(self, destinataire) -> int:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT id FROM Utilisateurs WHERE courriel == ?", (destinataire,))
+        id_utilisateur = cursor.fetchone()
+        if id_utilisateur:
+            return id_utilisateur[0]
+        else:
+            return -1
+
+    def verifier_token(self, id_utilisateur: int, token: str, etablissement: int) -> bool:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT * FROM TokensSuppression "
+                       "WHERE id_utilisateur == ? AND token == ? AND etablissement == ?",
+                       (id_utilisateur, token, etablissement))
+        donnee = cursor.fetchone()
+        return True if donnee else False
+
+    def get_all_etablissements_surveilles(self, id_utilisateur) -> list:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT etablissements FROM Utilisateurs WHERE id == ?", (id_utilisateur,))
+        donnnes = cursor.fetchone()
+        return json.loads(donnnes[0])

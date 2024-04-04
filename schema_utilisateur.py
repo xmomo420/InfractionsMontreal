@@ -16,7 +16,7 @@ valider_nouvel_utilisateur = {
         },
         "confirmation_courriel": {
             "type": "string",
-            "format": "email"
+            "pattern": "^\S+@\S+\.\S+$"
         },
         "mot_de_passe": {
             "type": "string",
@@ -38,7 +38,7 @@ valider_login = {
     "properties": {
         "courriel": {
             "type": "string",
-            "format": "email"
+            "pattern": "^\S+@\S+\.\S+$"
         },
         "mot_de_passe": {
             "type": "string",

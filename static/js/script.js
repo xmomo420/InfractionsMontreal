@@ -43,7 +43,7 @@ $(document).on('click', '#button-supprimer', function(event) {
     var etablissement = $(this).closest('tr').find('td:first').text();
     var encodedEtablissement = encodeURIComponent(etablissement);
 
-    fetch('/api/supprimer-etablissement/' + etablissement, {
+    fetch('/api/retirer-etablissement/' + etablissement, {
         method: 'DELETE'
     })
     .then(response => response.json())

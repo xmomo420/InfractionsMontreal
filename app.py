@@ -1,9 +1,11 @@
+import io
 import json
 import os
 import secrets
 from functools import wraps
-
-from flask import Flask, g, redirect, render_template, request, url_for, jsonify, url_for, session, abort
+from typing import List
+import xml.etree.ElementTree as ET
+from flask import Flask, g, redirect, render_template, request, url_for, jsonify, session, abort, make_response
 from flask_mail import Mail, Message
 import requests
 from schema_utilisateur import valider_nouvel_utilisateur, valider_login
@@ -17,15 +19,24 @@ from demande_inspection import Inspection
 from apscheduler.schedulers.background import BackgroundScheduler
 from urllib.parse import unquote
 from datetime import datetime
+from datetime import datetime, timedelta
 from io import StringIO
 import base64
 import hashlib
 import uuid
 import csv
+from keys import client
 
 app = Flask(__name__, static_url_path="", static_folder="static")
 schema_utilisateur = JsonSchema(app)
 schema_inspection = JsonSchema(app)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'infractionsmontreal@gmail.com'
+app.config['MAIL_PASSWORD'] = 'ntppawpearajyjpl'
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+app.config['DESTINATAIRE_CORRECTION'] = 'destinataire5190@gmail.com'
 mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
@@ -33,8 +44,7 @@ app.config['SECRET_KEY'] = secrets.token_hex(16)
 @app.errorhandler(JsonValidationError)
 def validation_error(e):
     errors = [validation_error.message for validation_error in e.errors]
-    message = ("Le formulaire n'a pas été rempli correctement, veuillez remplir tous les champs et respecter les "
-               "critères")
+    message = "Un ou plusieurs champs sont invalide dans la requête"
     return jsonify({'error': e.message, 'errors': errors, 'message': message}), 400
 
 
@@ -64,7 +74,7 @@ def home():
     try:
         infractions = get_db_infractions().get_infractions()
         if len(infractions) == 0:
-            return 'Aucune infraction trouvée', 404
+            return redirect(url_for('index')), 302
         else:
             return render_template('accueil.html',
                                    message=request.args.get('message', None),
@@ -74,30 +84,54 @@ def home():
                 , 500)
 
 
-# Cette route permet de recuperer les donnees du fichier csv et les insere dans la base de donnees  A1
+def envoyer_courriel(infractions: List[Infractions]):
+    objet = "Nouvelle(s) infraction(s) détectée(s)"
+    sender = app.config['MAIL_USERNAME']
+    destinataire = app.config['DESTINATAIRE_CORRECTION']
+    nom_complet = get_db_utilisateurs().get_nom_by_courriel(destinataire)
+    message = Message(subject=objet, sender=sender, recipients=[destinataire])
+    message.html = render_template('courriel_infractions.html', nom_complet=nom_complet,
+                                   infractions=infractions)
+    mail.send(message)
+
+
+def publier_tweet(infraction: Infractions):
+    contenu_tweet = (f"Nouvelle infraction :\n"
+                     f"{infraction.etablissement}, {infraction.adresse}, "
+                     f"{infraction.date}, {infraction.montant}")
+    client.create_tweet(text=contenu_tweet)
+
+
 @app.route('/api/infractions-csv-to-db')
 def index():
     with app.app_context():  # Envelopper le code dans un contexte d'application Flask
         try:
-            url = 'https://data.montreal.ca/dataset/05a9e718-6810-4e73-8bb9-5955efeb91a0/resource/7f939a08-be8a-45e1-b208-d8744dca8fc6/download/violations.csv'
+            url = ('https://data.montreal.ca/dataset/05a9e718-6810-4e73-8bb9-5955efeb91a0/resource/7f939a08-be8a-45e1'
+                   '-b208-d8744dca8fc6/download/violations.csv')
             response = requests.get(url)
             response.raise_for_status()
-
+            liste_infractions = []
             csv_data = response.content.decode('utf-8')
             csv_reader = csv.DictReader(StringIO(csv_data))
-
             for row in csv_reader:
                 date = datetime.strptime(row['date'], '%Y%m%d').date()
                 date_jugement = datetime.strptime(
                     row['date_jugement'], '%Y%m%d').date()
                 date_statut = datetime.strptime(
                     row['date_statut'], '%Y%m%d').date()
-                infraction = Infractions(None, row['id_poursuite'], row['business_id'], date, row['description'],
+                infraction = Infractions(row['id_poursuite'], row['business_id'], date, row['description'],
                                          row['adresse'], date_jugement,
                                          row['etablissement'], row['montant'], row['proprietaire'], row['ville'],
                                          row['statut'], date_statut, row['categorie'])
-                get_db_infractions().creer_infraction(infraction)
-                print('Insertion de l\'infraction')
+                if get_db_infractions().creer_infraction(infraction):
+                    liste_infractions.append(infraction)
+                    destinataires = get_db_utilisateurs().get_courriels_by_business_id(infraction.id_business)
+                    if len(destinataires) > 0:
+                        envoyer_courriel_etablissement(destinataires, infraction)
+            if len(liste_infractions) > 0:
+                envoyer_courriel(liste_infractions)
+            for infraction in liste_infractions:
+                publier_tweet(infraction)
             return 'La base de données a été mise à jour avec succès!', 201
         except Exception as e:
             return f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}', 500
@@ -107,7 +141,6 @@ def index():
 scheduler = BackgroundScheduler()
 scheduler.add_job(index, 'cron', hour=00, minute=00, second=00)
 scheduler.start()
-print("Scheduler started...")
 
 
 # Cette route permet de rechercher les infractions dans la base de donnees selon le nom de l'etablissement,
@@ -284,24 +317,27 @@ def fichier_valide(filename: str) -> bool:
 @app.route('/api/profil/modifer/<id>', methods=['PUT'])
 @authentification_requise
 def traitement_modifications(id):
-    nouvelle_photo = False
-    photo = request.files["photo"]
-    _etablissements = request.form["liste_etablissements"]
-    _etablissements = json.loads(_etablissements)
-    if photo.filename != '':
-        if fichier_valide(photo.filename):
+    if get_db_utilisateurs().get_utilisateur(id):
+        nouvelle_photo = False
+        photo = request.files["photo"]
+        _etablissements = request.form["liste_etablissements"]
+        _etablissements = json.loads(_etablissements)
+        if photo.filename != '':
+            if fichier_valide(photo.filename):
+                message = "Modifications apportées avec succès"
+                code = 200
+                nouvelle_photo = True
+                get_db_utilisateurs().modifier_utilisateur(id, _etablissements, photo)
+            else:
+                message = f"Erreur lors de la lecture du fichier transmis : \"{photo.filename}\""
+                code = 400
+        else:
             message = "Modifications apportées avec succès"
             code = 200
-            nouvelle_photo = True
-            get_db_utilisateurs().modifier_utilisateur(id, _etablissements, photo)
-        else:
-            message = f"Erreur lors de la lecture du fichier transmis : \"{photo.filename}\""
-            code = 400
+            get_db_utilisateurs().modifier_utilisateur(id, _etablissements, None)
+        return jsonify({"message": message, "code": code, "photo": nouvelle_photo}), code
     else:
-        message = "Modifications apportées avec succès"
-        code = 200
-        get_db_utilisateurs().modifier_utilisateur(id, _etablissements, None)
-    return jsonify({"message": message, "code": code, "photo": nouvelle_photo}), code
+        abort(404)
 
 
 @app.route('/login', methods=['GET'])
@@ -371,8 +407,8 @@ def plainte():
     return render_template('plainte.html', nom_page='Plainte'), 200
 
 
-@app.route('/api/supprimer-etablissement/<string:etablissement>', methods=['DELETE'])
-def supprimer_etablissement(etablissement):
+@app.route('/api/retirer-etablissement/<string:etablissement>', methods=['DELETE'])
+def retirer_etablissement(etablissement):
     etablissement = unquote(etablissement)
     try:
         get_db_infractions().supprimer_etablissement(etablissement)
@@ -394,3 +430,115 @@ def modifier_etablissement(etablissement):
         print(e)
         return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
                              "signalée à l'équipe de développement."), 500
+def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions):
+    objet = "Nouvelle infraction détectée"
+    sender = app.config['MAIL_USERNAME']
+    for destinataire in destinataires:
+        nom_complet = get_db_utilisateurs().get_nom_by_courriel(destinataire)
+        message = Message(subject=objet, sender=sender, recipients=[destinataire])
+        id_utilisateur = get_db_utilisateurs().get_id_by_courriel(destinataire)
+        token = generer_token(id_utilisateur, infraction.id_business)
+        message.html = render_template('courriel_etablissement.html', nom_complet=nom_complet,
+                                       infraction=infraction, id_utilisateur=id_utilisateur, token=token,
+                                       etablissement=infraction.id_business)
+        mail.send(message)
+        # Supprimer le token après 1 semaine
+        moment_expiration = datetime.now() + timedelta(days=7)
+        scheduler.add_job(supprimer_token, 'date', run_date=moment_expiration,
+                          args=[token])
+
+
+@app.route('/supprimer-etablissement/<id_utilisateur>&<token>&<etablissement>')
+def confirmer_suppression(id_utilisateur, token, etablissement):
+    if get_db_utilisateurs().verifier_token(id_utilisateur, token, etablissement):
+        donnees = get_db_infractions().get_adresse_ville_etablissement(etablissement)
+        nom_etablissement = donnees[0]
+        adresse = donnees[1]
+        ville = donnees[2]
+        # Supprimer le token 5 minute après l'accès à cette route
+        moment_expiration = datetime.now() + timedelta(minutes=5)
+        # TODO : Régler les problèmes de connection
+        scheduler.add_job(supprimer_token, 'date', run_date=moment_expiration,
+                          args=[token])
+        return render_template('confirmation_suppression.html',
+                               id_utilisateur=id_utilisateur, token=token,
+                               etablissement=etablissement, nom_etablissement=nom_etablissement,
+                               adresse=adresse, ville=ville, nom_page='Confirmer suppression'), 200
+    else:
+        abort(403)
+
+
+# TODO : Ajouter l'établissement comme attribut du token
+def generer_token(id_utilisateur: int, etablissement: int) -> str or None:
+    if get_db_utilisateurs().get_utilisateur(id_utilisateur) is not None:
+        return get_db_utilisateurs().generer_token(id_utilisateur, etablissement)
+    else:
+        return None
+
+
+def supprimer_token(token: str):
+    get_db_utilisateurs().supprimer_token(token)
+
+
+@app.route('/api/supprimer-etablissement/<id_utilisateur>&<token>&<etablissement>', methods=["PATCH"])
+def supprimer_etablissement(id_utilisateur: int, token: str, etablissement: int):
+    if get_db_utilisateurs().verifier_token(id_utilisateur, token, etablissement):
+        etablissements_surveilles = get_db_utilisateurs().get_all_etablissements_surveilles(id_utilisateur)
+        if etablissement in etablissements_surveilles:
+            etablissements_surveilles.remove(etablissement)
+        get_db_utilisateurs().modifier_utilisateur(id_utilisateur, etablissements_surveilles, None)
+        message = "L'établissement a été supprimé de votre profil"
+        code = 200
+        supprimer_token(token)
+    else:
+        message = "Le jeton d'authentification fourni est invalide ou a expiré"
+        code = 403
+    return jsonify({"message": message, "code": code}), code
+
+
+@app.route('/api/infractions-etablissements/<format>', methods=['GET'])
+def infractions_etablissements(format):
+    etablissements = get_db_infractions().get_infractions_etablissement()
+    if etablissements:
+        if format == "json":
+            reponse_json = []
+            for _etablissement in etablissements:
+                reponse_json.append({
+                    "nom": _etablissement[2],
+                    "id": _etablissement[0],
+                    "nombre_infractions": _etablissement[1]
+                })
+            return jsonify(reponse_json), 200
+        elif format == "xml":
+            racine = ET.Element("etablissements")
+            # Ajouter les éléments à l'arbre XML
+            for _etablissement in etablissements:
+                etablissement_xml = ET.SubElement(racine, 'etablissement')
+                ET.SubElement(etablissement_xml, 'nom').text = _etablissement[2]
+                ET.SubElement(etablissement_xml, 'id').text = str(_etablissement[0])
+                ET.SubElement(etablissement_xml, 'nombre_infractions').text = str(_etablissement[1])
+            # Générer la réponse XML
+            xml_string = ET.tostring(racine, encoding='utf-8', method='xml')
+            # Créer une réponse avec le contenu XML et le type de contenu approprié
+            response = make_response(xml_string)
+            response.headers['Content-Type'] = 'application/xml'
+            return response, 200
+        elif format == "csv":
+            # Insérer le tuple qui représente le tires des colonnes
+            etablissements.insert(0, ("ID", "Nombre d'infractions", "Nom"))
+
+            # Créer le contenu CSV
+            donnees_csv = io.StringIO()
+            csv_writer = csv.writer(donnees_csv)
+            csv_writer.writerows(etablissements)
+
+            # Créer la réponse avec le contenu CSV
+            response = make_response(donnees_csv.getvalue())
+
+            # Spécifier l'encodage UTF-8 dans les en-têtes de la réponse
+            response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+            response.headers['Content-Disposition'] = 'attachment; filename=infractions.csv'
+            return response, 200
+        else:
+            abort(404)
+# TODO : Gestion des erreurs (404, 403, 500, etc.)

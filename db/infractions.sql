@@ -1,6 +1,5 @@
 CREATE TABLE Infractions (
-    id INTEGER PRIMARY KEY,
-    id_poursuite integer,
+    id_poursuite INTEGER PRIMARY KEY,
     id_business integer,
     date timestamp,
     description text,

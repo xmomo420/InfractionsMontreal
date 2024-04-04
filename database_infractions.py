@@ -16,15 +16,18 @@ class DatabaseInfractions:
         if self.connection is not None:
             self.connection.close()
 
-    def creer_infraction(self, infraction):
+    def creer_infraction(self, infraction) -> bool:  # Retourne true si l'infraction n'existait pas
         cursor = self.get_connection().cursor()
         cursor.execute(
-            "INSERT INTO infractions (id_poursuite, id_business, date, description, adresse, date_jugement, etablissement, montant, proprietaire, ville, statut, date_statut, categorie) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO infractions (id_poursuite, id_business, date, description, adresse, date_jugement, "
+            "etablissement, montant, proprietaire, ville, statut, date_statut, categorie)"
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (id_poursuite) DO NOTHING",
             (infraction.id_poursuite, infraction.id_business, infraction.date, infraction.description,
              infraction.adresse, infraction.date_jugement, infraction.etablissement, infraction.montant,
              infraction.proprietaire, infraction.ville, infraction.statut, infraction.date_statut,
              infraction.categorie))
         self.get_connection().commit()
+        return cursor.lastrowid == int(infraction.id_poursuite)  # L'infraction existait déjà
 
     def get_infractions(self):
         cursor = self.get_connection().cursor()
@@ -90,3 +93,16 @@ class DatabaseInfractions:
         cursor = self.get_connection().cursor()
         cursor.execute("DELETE FROM infractions WHERE etablissement = ?", (etablissement,))
         self.get_connection().commit()
+    def get_adresse_ville_etablissement(self, id_business) -> tuple:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT etablissement, adresse, ville FROM infractions WHERE id_business = ? LIMIT 1",
+                       (id_business,))
+        donnees = cursor.fetchone()
+        return donnees
+
+    def get_infractions_etablissement(self) -> list or None:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT id_business, COUNT(*) AS occurences, etablissement FROM Infractions "
+                       "GROUP BY id_business, etablissement ORDER BY occurences DESC")
+        donnees = cursor.fetchall()
+        return donnees if len(donnees) > 0 else None
