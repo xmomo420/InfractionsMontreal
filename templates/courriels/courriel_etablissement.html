@@ -10,19 +10,19 @@
         <div class="table-responsive text-center">
             <table class="table align-middle table-secondary table-bordered">
                 <thead class="table-primary">
-                    <tr>
-                        <th scope="col">Établissement</th>
-                        <th scope="col">Date</th>
-                        <th scope="col">Montant</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>{{ infraction.etablissement }} ({{ infraction.id_business }})</td>
-                        <td>{{ infraction.date }}</td>
-                        <td>{{ infraction.montant }} $</td>
-                    </tr>
-                    </tbody>
+                <tr>
+                    <th scope="col">Établissement</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Montant</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ infraction.etablissement }} ({{ infraction.id_business }})</td>
+                    <td>{{ infraction.date }}</td>
+                    <td>{{ infraction.montant }} $</td>
+                </tr>
+                </tbody>
             </table>
         </div>
         <h4>Description</h4>
@@ -35,7 +35,7 @@
         <a href="{{ request.url_root }}confirmer-suppression/{{ id_utilisateur }}&{{ token }}&{{ etablissement }}">
             <button class="btn btn-lg btn-danger">Désactiver</button>
         </a>
-        </div>
+    </div>
     <!-- Ajout Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </div>

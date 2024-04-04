@@ -92,7 +92,7 @@ def envoyer_courriel(infractions: List[Infractions]):
     destinataire = app.config['DESTINATAIRE_CORRECTION']
     nom_complet = get_db_utilisateurs().get_nom_by_courriel(destinataire)
     message = Message(subject=objet, sender=sender, recipients=[destinataire])
-    message.html = render_template('courriel_infractions.html', nom_complet=nom_complet,
+    message.html = render_template('courriels/courriel_infractions.html', nom_complet=nom_complet,
                                    infractions=infractions)
     mail.send(message)
 
@@ -100,7 +100,7 @@ def envoyer_courriel(infractions: List[Infractions]):
 def publier_tweet(infraction: Infractions):
     contenu_tweet = (f"Nouvelle infraction :\n"
                      f"{infraction.etablissement}, {infraction.adresse}, "
-                     f"{infraction.date}, {infraction.montant}")
+                     f"{infraction.date} : {infraction.montant} $")
     client.create_tweet(text=contenu_tweet)
 
 
@@ -390,7 +390,7 @@ def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions)
         message = Message(subject=objet, sender=sender, recipients=[destinataire])
         id_utilisateur = get_db_utilisateurs().get_id_by_courriel(destinataire)
         token = generer_token(id_utilisateur, infraction.id_business)
-        message.html = render_template('courriel_etablissement.html', nom_complet=nom_complet,
+        message.html = render_template('courriels/courriel_etablissement.html', nom_complet=nom_complet,
                                        infraction=infraction, id_utilisateur=id_utilisateur, token=token,
                                        etablissement=infraction.id_business)
         mail.send(message)
@@ -476,7 +476,7 @@ def infractions_etablissements(format):
             response.headers['Content-Type'] = 'application/xml'
             return response, 200
         elif format == "csv":
-            # Insérer le tuple qui représente le tires des colonnes
+            # Insérer le tuple qui représente les titres des colonnes
             etablissements.insert(0, ("ID", "Nombre d'infractions", "Nom"))
 
             # Créer le contenu CSV
