@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+    <div class="modification-etablissement container">
+        <h3 class="text-center">Modification du nom d'un établissement</h3>
+        <form id="form-modification-etablissement" class="form-group">
+            <label for="nom-etablissement">Nom de l'établissement</label>
+            <input type="text" class="form-control" placeholder="{{ etablissement }}" id="nom-etablissement" name="nomEtablissement" required>
+            <button id="button-modification-etablissement" class="btn btn-outline-primary mt-3">Modifier</button>
+        </form>
+        <div id="resultat-modification-etablissement"></div>
+    </div>
+
+{% endblock %}

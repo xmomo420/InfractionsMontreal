@@ -396,7 +396,6 @@ def supprimer_inspection(id_inspection):
         get_db_infractions().supprimer_inspection(id_inspection)
         return jsonify(message='L\'inspection a été supprimée avec succès.'), 200
     except Exception as e:
-        print(e)
         return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
                              "signalée à l'équipe de développement."), 500
 
@@ -411,25 +410,32 @@ def plainte():
 def retirer_etablissement(etablissement):
     etablissement = unquote(etablissement)
     try:
-        get_db_infractions().supprimer_etablissement(etablissement)
-        return jsonify(message='L\'établissement a été supprimé avec succès.'), 200
+        if request.authorization and request.authorization.username == 'admin' and request.authorization.password == 'admin':
+            get_db_infractions().supprimer_etablissement(etablissement)
+            return jsonify(message='L\'établissement a été supprimé avec succès.'), 200
+        else:
+            return jsonify(error="Vous n'êtes pas autorisé à accéder à cette ressource."), 403
     except Exception as e:
-        print(e)
         return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
                              "signalée à l'équipe de développement."), 500
 
 
-@app.route('/api/modifier-etablissement/<string:etablissement>', methods=['PUT'])
+@app.route('/modifier-etablissement/<string:etablissement>', methods=['GET', 'PUT'])
 def modifier_etablissement(etablissement):
     etablissement = unquote(etablissement)
     try:
-        data = request.get_json()
-        # get_db_infractions().modifier_etablissement(etablissement, data['nouveau_nom'])
-        return jsonify(message='L\'établissement a été modifié avec succès.'), 200
+        if request.method == 'PUT':
+            nouveau_nom = request.get_json()['nom_etablissement']
+            get_db_infractions().modifier_etablissement(etablissement, nouveau_nom)
+            return jsonify(message='L\'établissement a été modifié avec succès.'), 200
+        else:
+            return render_template('modification_nom_etablissement.html', nom_page='Modifier établissement', etablissement=etablissement), 200
     except Exception as e:
-        print(e)
         return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
                              "signalée à l'équipe de développement."), 500
+
+
+
 def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions):
     objet = "Nouvelle infraction détectée"
     sender = app.config['MAIL_USERNAME']

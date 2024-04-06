@@ -106,3 +106,8 @@ class DatabaseInfractions:
                        "GROUP BY id_business, etablissement ORDER BY occurences DESC")
         donnees = cursor.fetchall()
         return donnees if len(donnees) > 0 else None
+
+    def modifier_etablissement(self, etablissement, nouveau_nom):
+        cursor = self.get_connection().cursor()
+        cursor.execute("UPDATE infractions SET etablissement = ? WHERE etablissement = ?", (nouveau_nom, etablissement))
+        self.get_connection().commit()

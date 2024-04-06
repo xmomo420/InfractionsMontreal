@@ -1,14 +1,16 @@
 $(document).ready(function() {
     $('#button-recherche').on('click', function(event) {
 
-        var dateDebut = $('#date-debut').val();
-        var dateFin = $('#date-fin').val();
+        let dateDebut = $('#date-debut').val();
+        let dateFin = $('#date-fin').val();
+
+
 
         fetch('/api/contraventions?du=' + dateDebut + '&au=' + dateFin)
         .then(response => response.json())
         .then(data => {
             // Créer un objet pour compter les occurrences de chaque restaurant
-            var counts = {};
+            let counts = {};
             data.forEach(item => {
                 if (counts[item.etablissement]) {
                     counts[item.etablissement]++;
@@ -18,14 +20,14 @@ $(document).ready(function() {
             });
 
             // Créer le tableau HTML
-            var html = '<table><tr class="text-center"><th>Etablissement</th><th>Occurrences</th><th>Action</th></tr>';
+            let html = '<table class="table table-striped"><thead><tr class="text-center"><th>Etablissement</th><th>Occurrences</th><th>Action</th></tr></thead><tbody>';
             if (Object.keys(counts).length === 0) {
-                html += '<tr><td colspan="2">Aucun résultat</td></tr>';
+                html += '<tr><td colspan="3">Aucun résultat</td></tr>';
             }
-            for (var etablissement in counts) {
-                html += '<tr><td>' + etablissement + '</td><td>' + counts[etablissement] + '</td><td><button id="button-modifier" class="btn btn-outline-primary mt-3">Modifier</button></td><td><button id="button-supprimer" class="btn btn-outline-primary mt-3">Supprimer</button></td></tr>';
+            for (let etablissement in counts) {
+                html += '<tr><td>' + etablissement + '</td><td>' + counts[etablissement] + '</td><td><button id="button-modifier" class="btn btn-outline-primary mt-3">Modifier</button><button id="button-supprimer" class="btn btn-outline-primary mt-3 ml-2">Supprimer</button></td></tr>';
             }
-            html += '</table>';
+            html += '</tbody></table>';
             $('#resultat-recherche').html(html);
         })
         .catch(error => {
@@ -35,21 +37,65 @@ $(document).ready(function() {
 });
 
 $(document).on('click', '#button-modifier', function(event) {
-    var etablissement = $(this).closest('tr').find('td:first').text();
-    console.log(etablissement);
+    let etablissement = $(this).closest('tr').find('td:first').text();
+    let encodedEtablissement = encodeURIComponent(etablissement);
+
+    fetch('/modifier-etablissement/' + etablissement, {
+        method: 'GET',
+        redirect: 'follow',
+    })
+    .then(response => response.text())
+    .then(data => {
+        window.location.href = '/modifier-etablissement/' + encodedEtablissement;
+    })
+    .catch(error => console.error('Erreur :', error));
 });
 
-$(document).on('click', '#button-supprimer', function(event) {
-    var etablissement = $(this).closest('tr').find('td:first').text();
-    var encodedEtablissement = encodeURIComponent(etablissement);
+$(document).on('click', '#button-modification-etablissement', async function(event) {
 
-    fetch('/api/retirer-etablissement/' + etablissement, {
-        method: 'DELETE'
+    let inputElement = document.getElementById('nom-etablissement');
+    let nomEtablissement = inputElement.getAttribute('placeholder');
+
+    try {
+        let response = await fetch('/modifier-etablissement/' + nomEtablissement, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nom_etablissement: $('#nom-etablissement').val(),
+            })
+        });
+
+        let data = await response.json();
+
+        console.log('Réponse :', data);
+        let userResponse = confirm('L\'établissement a été modifié avec succès.');
+        if (userResponse) {
+            window.location.href = '/';
+        }
+    } catch (error) {
+        console.error('Erreur :', error);
+    }
+    });
+
+$(document).on('click', '#button-supprimer', function(event) {
+    let etablissement = $(this).closest('tr').find('td:first').text();
+    let encodedEtablissement = encodeURIComponent(etablissement);
+
+    let token = window.btoa('admin:admin');
+        let authToken = 'Basic ' + token;
+
+        let headers = new Headers();
+        headers.append('Authorization', authToken);
+
+    fetch('/api/retirer-etablissement/' + encodedEtablissement, {
+        method: 'DELETE',
+        headers: headers
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data);
-        var userResponse = confirm('L\'établissement a été supprimé avec succès.');
+        let userResponse = confirm('L\'établissement a été supprimé avec succès.');
         if (userResponse) {
             location.reload();
         }
@@ -69,7 +115,7 @@ $(document).ready(function() {
                 .then(response => response.json())  // Convertit la réponse en objet JavaScript
                 .then(data => {
                     // Crée le tableau HTML
-                    var html = '<table><tr><th>Poursuite(ID)</th><th>Business(ID)</th><th>Date</th><th>Description</th><th>Adresse</th><th>Date jugement</th><th>Etablissement</th><th>Montant</th><th>Proprietaire</th><th>Ville</th><th>Statut</th><th>Date statut</th><th>Categorie</th></tr>'
+                    let html = '<table class="table table-striped"><tr><th>Poursuite(ID)</th><th>Business(ID)</th><th>Date</th><th>Description</th><th>Adresse</th><th>Date jugement</th><th>Etablissement</th><th>Montant</th><th>Proprietaire</th><th>Ville</th><th>Statut</th><th>Date statut</th><th>Categorie</th></tr>'
                     data.forEach(infraction => {
                         html += '<tr> <td>' + infraction.id_poursuite + '</td> <td>' + infraction.id_business + '</td> <td>' + infraction.date + '</td> <td>' + infraction.description + '</td> <td>' + infraction.adresse + '</td> <td>' + infraction.date_jugement + '</td> <td>' + infraction.etablissement + '</td> <td>' + infraction.montant + '</td> <td>' + infraction.proprietaire + '</td> <td>' + infraction.ville + '</td> <td>' + infraction.statut + '</td> <td>' + infraction.date_statut + '</td> <td>' + infraction.categorie + '</td> </tr>';
                     });
