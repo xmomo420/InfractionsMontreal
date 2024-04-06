@@ -1,0 +1,49 @@
+{% extends 'layout.html' %} {% block content %}
+
+<div class="container">
+    <main class="form-signin">
+        <h1>Plainte</h1>
+        <p>
+            Vous avez un problème avec un produit ou un service ? Vous pouvez déposer
+            une plainte ici.
+        </p>
+        <form id="formulairePlainte">
+            <h1 class="h3 mb-3 fw-normal">Remplir le formulaire</h1>
+
+            <div class="form-floating mb-2">
+                <input type="text" class="form-control" id="etablissement" name="etablissement" placeholder="Établissement" />
+                <label for="etablissement">Établissement</label>
+            </div>
+            <div class="form-floating mb-2">
+                <input type="text" class="form-control" id="adresse" name="adresse" placeholder="Adresse" />
+                <label for="adresse">Adresse</label>
+            </div>
+            <div class="form-floating mb-2">
+                <input type="text" class="form-control" id="ville" name="ville" placeholder="Ville" />
+                <label for="ville">Ville</label>
+            </div>
+            <div class="form-floating mb-2">
+                <input type="date" class="form-control" id="date_visite_client" name="date_visite_client" placeholder="Date de la visite" />
+                <label for="date_visite_client">Date de la visite</label>
+            </div>
+            <div class="form-floating mb-2">
+                <input type="text" class="form-control" id="nom_client" name="nom_client" placeholder="Nom" />
+                <label for="nom_client">Nom</label>
+            </div>
+            <div class="form-floating mb-2">
+                <input type="text" class="form-control" id="prenom_client" name="prenom_client" placeholder="Prenom" />
+                <label for="prenom_client">Prenom</label>
+            </div>
+            <div class="form-floating mb-2">
+                <input type="text" class="form-control" id="description_probleme" name="description_probleme" placeholder="Description du probleme" />
+                <label for="description_probleme">Description du probleme</label>
+            </div>
+            <button class="w-100 btn btn-lg btn-primary mb-2" type="submit">
+                Envoyer
+            </button>
+        </form>
+        <div id="message"></div>
+    </main>
+</div>
+
+{% endblock %}

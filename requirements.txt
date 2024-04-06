@@ -14,7 +14,6 @@ google-api-core==2.18.0
 google-api-python-client==2.123.0
 google-auth==2.29.0
 google-auth-httplib2==0.2.0
-google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.63.0
 gunicorn==21.2.0
 httplib2==0.22.0
@@ -35,7 +34,7 @@ pyparsing==3.1.2
 pytz==2024.1
 referencing==0.34.0
 requests==2.31.0
-requests-oauthlib==2.0.0
+requests-oauthlib>=1.2.0,<2
 rpds-py==0.18.0
 rsa==4.9
 six==1.16.0

@@ -1,5 +1,6 @@
 import sqlite3
 from infractions import Infractions
+from demande_inspection import Inspection
 
 
 class DatabaseInfractions:
@@ -70,6 +71,28 @@ class DatabaseInfractions:
         donnees = cursor.fetchone()
         return donnees[0]
 
+    def inserer_plainte(self, plainte):
+        cursor = self.get_connection().cursor()
+        cursor.execute(
+            "INSERT INTO Demande_inspection (etablissement, adresse, ville, date_visite, nom_client, prenom_client, description) VALUES (?,?,?,?,?,?,?)",
+            (plainte.etablissement, plainte.adresse, plainte.ville, plainte.date_visite_client, plainte.nom_client,
+             plainte.prenom_client, plainte.description_probleme))
+        self.get_connection().commit()
+        cursor = cursor.execute("SELECT last_insert_rowid()")
+        result = cursor.fetchall()
+        plainte.id = result[0][0]
+        return plainte
+
+    def supprimer_inspection(self, id_inspection):
+        cursor = self.get_connection().cursor()
+        cursor.execute("DELETE FROM Demande_inspection WHERE id = ?", (id_inspection,))
+        self.get_connection().commit()
+
+
+    def supprimer_etablissement(self, etablissement):
+        cursor = self.get_connection().cursor()
+        cursor.execute("DELETE FROM infractions WHERE etablissement = ?", (etablissement,))
+        self.get_connection().commit()
     def get_adresse_ville_etablissement(self, id_business) -> tuple:
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT etablissement, adresse, ville FROM infractions WHERE id_business = ? LIMIT 1",
@@ -83,3 +106,8 @@ class DatabaseInfractions:
                        "GROUP BY id_business, etablissement ORDER BY occurences DESC")
         donnees = cursor.fetchall()
         return donnees if len(donnees) > 0 else None
+
+    def modifier_etablissement(self, etablissement, nouveau_nom):
+        cursor = self.get_connection().cursor()
+        cursor.execute("UPDATE infractions SET etablissement = ? WHERE etablissement = ?", (nouveau_nom, etablissement))
+        self.get_connection().commit()

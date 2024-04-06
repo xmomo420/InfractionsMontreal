@@ -12,4 +12,15 @@ CREATE TABLE Infractions (
     statut text,
     date_statut timestamp,
     categorie text
-)
+);
+
+CREATE TABLE Demande_inspection (
+    id INTEGER PRIMARY KEY,
+    etablissement text,
+    adresse text,
+    ville text,
+    date_visite timestamp,
+    nom_client text,
+    prenom_client text,
+    description text
+);

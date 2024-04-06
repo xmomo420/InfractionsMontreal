@@ -9,12 +9,16 @@ from flask import Flask, g, redirect, render_template, request, url_for, jsonify
 from flask_mail import Mail, Message
 import requests
 from schema_utilisateur import valider_nouvel_utilisateur, valider_login
+from schema_inspection import inspection_schema
 from flask_json_schema import JsonValidationError, JsonSchema
 from database_infractions import DatabaseInfractions
 from database_utilisateur import DatabaseUtilisateur
 from infractions import Infractions
 from utilisateur import Utilisateur
+from demande_inspection import Inspection
 from apscheduler.schedulers.background import BackgroundScheduler
+from urllib.parse import unquote
+from datetime import datetime
 from datetime import datetime, timedelta
 from io import StringIO
 import base64
@@ -25,6 +29,7 @@ from keys import client
 
 app = Flask(__name__, static_url_path="", static_folder="static")
 schema_utilisateur = JsonSchema(app)
+schema_inspection = JsonSchema(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'infractionsmontreal@gmail.com'
@@ -73,8 +78,7 @@ def home():
         else:
             return render_template('accueil.html',
                                    message=request.args.get('message', None),
-                                   infractions=infractions,
-                                   nom_page='Infractions Montréal'), 200
+                                   nom_page='Infractions Montréal', infractions=infractions), 200
     except Exception as e:
         return (f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement: {str(e)}'
                 , 500)
@@ -372,6 +376,66 @@ def logout():
                     302)
 
 
+
+@app.route('/api/demande-inspection', methods=['POST'])
+@schema_inspection.validate(inspection_schema)
+def demande_inspections():
+    try:
+        data = request.get_json()
+        inspection = Inspection(None, data['etablissement'], data['adresse'], data['ville'], data['date_visite_client'], data['nom_client'], data['prenom_client'], data['description_probleme'])
+        inspection = get_db_infractions().inserer_plainte(inspection)
+        return jsonify(inspection.asDictionary()), 201
+    except Exception as e:
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
+
+
+@app.route('/api/supprimer-inspection/<int:id_inspection>', methods=['DELETE'])
+def supprimer_inspection(id_inspection):
+    try:
+        get_db_infractions().supprimer_inspection(id_inspection)
+        return jsonify(message='L\'inspection a été supprimée avec succès.'), 200
+    except Exception as e:
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
+
+
+
+@app.route('/plainte')
+def plainte():
+    return render_template('plainte.html', nom_page='Plainte'), 200
+
+
+@app.route('/api/retirer-etablissement/<string:etablissement>', methods=['DELETE'])
+def retirer_etablissement(etablissement):
+    etablissement = unquote(etablissement)
+    try:
+        if request.authorization and request.authorization.username == 'admin' and request.authorization.password == 'admin':
+            get_db_infractions().supprimer_etablissement(etablissement)
+            return jsonify(message='L\'établissement a été supprimé avec succès.'), 200
+        else:
+            return jsonify(error="Vous n'êtes pas autorisé à accéder à cette ressource."), 403
+    except Exception as e:
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
+
+
+@app.route('/modifier-etablissement/<string:etablissement>', methods=['GET', 'PUT'])
+def modifier_etablissement(etablissement):
+    etablissement = unquote(etablissement)
+    try:
+        if request.method == 'PUT':
+            nouveau_nom = request.get_json()['nom_etablissement']
+            get_db_infractions().modifier_etablissement(etablissement, nouveau_nom)
+            return jsonify(message='L\'établissement a été modifié avec succès.'), 200
+        else:
+            return render_template('modification_nom_etablissement.html', nom_page='Modifier établissement', etablissement=etablissement), 200
+    except Exception as e:
+        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
+                             "signalée à l'équipe de développement."), 500
+
+
+
 def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions):
     objet = "Nouvelle infraction détectée"
     sender = app.config['MAIL_USERNAME']
@@ -390,7 +454,7 @@ def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions)
                           args=[token])
 
 
-@app.route('/confirmer-suppression/<id_utilisateur>&<token>&<etablissement>')
+@app.route('/supprimer-etablissement/<id_utilisateur>&<token>&<etablissement>')
 def confirmer_suppression(id_utilisateur, token, etablissement):
     if get_db_utilisateurs().verifier_token(id_utilisateur, token, etablissement):
         donnees = get_db_infractions().get_adresse_ville_etablissement(etablissement)
