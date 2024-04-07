@@ -41,6 +41,9 @@ mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
 MESSAGE_ERREUR_500 = 'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement'
+MESSAGE_ERREUR_403 = "L'accès à cette ressource ne vous est pas autorisé"
+MESSAGE_ERREUR_404 = "La ressource à laquelle vous avez tenté d'accéder n'existe pas"
+MESSAGE_ERREUR_405 = "La méthode que vous avez utilisée n'est pas permise pour cet URL"
 
 
 @app.route('/favicon.ico', methods=["GET"])
@@ -386,18 +389,17 @@ def logout():
                     302)
 
 
-
 @app.route('/api/demande-inspection', methods=['POST'])
 @schema_inspection.validate(inspection_schema)
 def demande_inspections():
     try:
         data = request.get_json()
-        inspection = Inspection(None, data['etablissement'], data['adresse'], data['ville'], data['date_visite_client'], data['nom_client'], data['prenom_client'], data['description_probleme'])
+        inspection = Inspection(None, data['etablissement'], data['adresse'], data['ville'], data['date_visite_client'],
+                                data['nom_client'], data['prenom_client'], data['description_probleme'])
         inspection = get_db_infractions().inserer_plainte(inspection)
         return jsonify(inspection.asDictionary()), 201
     except Exception as e:
-        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
-                             "signalée à l'équipe de développement."), 500
+        return jsonify(error=F"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
 
 @app.route('/api/supprimer-inspection/<int:id_inspection>', methods=['DELETE'])
@@ -406,9 +408,7 @@ def supprimer_inspection(id_inspection):
         get_db_infractions().supprimer_inspection(id_inspection)
         return jsonify(message='L\'inspection a été supprimée avec succès.'), 200
     except Exception as e:
-        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
-                             "signalée à l'équipe de développement."), 500
-
+        return jsonify(error=F"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
 
 @app.route('/plainte')
@@ -424,10 +424,9 @@ def retirer_etablissement(etablissement):
             get_db_infractions().supprimer_etablissement(etablissement)
             return jsonify(message='L\'établissement a été supprimé avec succès.'), 200
         else:
-            return jsonify(error="Vous n'êtes pas autorisé à accéder à cette ressource."), 403
+            return jsonify(error=MESSAGE_ERREUR_403), 403
     except Exception as e:
-        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
-                             "signalée à l'équipe de développement."), 500
+        return jsonify(error=F"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
 
 @app.route('/modifier-etablissement/<string:etablissement>', methods=['GET', 'PUT'])
@@ -439,11 +438,10 @@ def modifier_etablissement(etablissement):
             get_db_infractions().modifier_etablissement(etablissement, nouveau_nom)
             return jsonify(message='L\'établissement a été modifié avec succès.'), 200
         else:
-            return render_template('modification_nom_etablissement.html', nom_page='Modifier établissement', etablissement=etablissement), 200
+            return render_template('modification_nom_etablissement.html', nom_page='Modifier établissement',
+                                   etablissement=etablissement), 200
     except Exception as e:
-        return jsonify(error="Une erreur interne s'est produite. L'erreur a été "
-                             "signalée à l'équipe de développement."), 500
-
+        return jsonify(error=F"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
 
 def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions):
@@ -464,7 +462,7 @@ def envoyer_courriel_etablissement(destinataires: list, infraction: Infractions)
                           args=[token])
 
 
-@app.route('/supprimer-etablissement/<id_utilisateur>&<token>&<etablissement>')
+@app.route('/confirmer-suppression/<id_utilisateur>&<token>&<etablissement>')
 def confirmer_suppression(id_utilisateur, token, etablissement):
     if get_db_utilisateurs().verifier_token(id_utilisateur, token, etablissement):
         donnees = get_db_infractions().get_adresse_ville_etablissement(etablissement)
@@ -557,4 +555,21 @@ def infractions_etablissements(format):
             return response, 200
         else:
             abort(404)
-# TODO : Gestion des erreurs (404, 403, 500, etc.)
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('erreur.html', message_erreur=MESSAGE_ERREUR_404,
+                           titre="Erreur 404", nom_page=f"{str(error)}"), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return render_template('erreur.html', message_erreur=MESSAGE_ERREUR_405,
+                           titre="Erreur 405", nom_page=f"{str(error)}"), 405
+
+
+@app.errorhandler(403)
+def access_denied(error):
+    return render_template('erreur.html', message_erreur=MESSAGE_ERREUR_403,
+                           titre="Erreur 403", nom_page=f"{str(error)}"), 403

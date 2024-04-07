@@ -1,29 +1,29 @@
 {% extends "layout.html" %}
 {% block content %}
     <!-- Message qui s'affiche quand le restaurant a été supprimé correctement -->
-    <div id="conteneurMessage" style="display: none" class="text-center mx-auto container m-4 p-4 alert alert-success" role="alert">
+    <div id="conteneurMessage" style="display: none" class="text-center container mt-4 mb-4 p-4 alert alert-success" role="alert">
         <h3 id="contenuMessage" class="alert-heading"></h3>
     </div>
-	<div id="conteneurPage" class="text-center mx-auto bg-primary-subtle container card g-3 m-4 p-4">
-        <h2 class="text-center">Êtes-vous certain de retirer le restaurant de votre profil ? </h2>
+    <div id="conteneurPage" class="text-center bg-primary-subtle container card g-3 mb-4 mt-4 p-4">
+        <h2>Êtes-vous certain de retirer le restaurant de votre profil ? </h2>
         <hr class="bg-primary border border-dark border-4 card">
-        <div class="table-responsive text-center">
-            <table class="table align-middle table-secondary table-bordered">
+        <div class="table-responsive">
+            <table class="table align-middle table-secondary table-bordered text-center">
                 <thead class="table-primary">
-                    <tr>
-                        <th scope="col">Nom</th>
-                        <th scope="col">ID</th>
-                        <th scope="col">Adresse</th>
-                        <th scope="col">Ville</th>
-                    </tr>
+                <tr>
+                    <th scope="col">Nom</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Adresse</th>
+                    <th scope="col">Ville</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>{{ nom_etablissement }}</td>
-                        <td>{{ etablissement }}</td>
-                        <td>{{ adresse }}</td>
-                        <td>{{ adresse }}</td>
-                    </tr>
+                <tr>
+                    <td>{{ nom_etablissement }}</td>
+                    <td>{{ etablissement }}</td>
+                    <td>{{ adresse }}</td>
+                    <td>{{ adresse }}</td>
+                </tr>
                 </tbody>
             </table>
         </div>

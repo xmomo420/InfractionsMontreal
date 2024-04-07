@@ -12,22 +12,6 @@
     <title>{{ nom_page }}</title>
 </head>
 <body class="bg-info-subtle">
-<<<<<<< HEAD
-    <!-- Barre de navigation -->
-    <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-primary border-bottom border-2 border-dark-subtle rounded-bottom">
-        <div class="container-fluid">
-            <!-- Lien vers la page d'accueil -->
-            <a class="ms-4 navbar-brand fw-bold" href="{{ url_for('home') }}">Accueil</a>
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 fw-bolder">
-                <!-- Routes de l'application -->
-                <!-- TODO : Ajouter les autres routes -->
-                <li class="nav-item ms-4">
-                    <a class="nav-link" href="{{ url_for('plainte') }}">Plainte</a>
-                </li>
-                <li class="ms-4 nav-item">
-                    <a target="_blank" href="https://twitter.com/Infractions_MTL">
-                        <div id="twitterLogo" class="bg-white card"></div>
-=======
 <!-- Barre de navigation -->
 <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-primary border-bottom border-2 border-dark-subtle rounded-bottom">
     <div class="container-fluid">
@@ -35,6 +19,10 @@
         <a class="ms-4 navbar-brand fw-bold" href="{{ url_for('home') }}">Accueil</a>
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 fw-bolder">
             <!-- Routes de l'application -->
+            <!-- TODO : Ajouter les autres routes -->
+            <li class="nav-item ms-4">
+                <a class="nav-link" href="{{ url_for('plainte') }}">Plainte</a>
+            </li>
             <li class="ms-4 nav-item">
                 <a target="_blank" href="https://twitter.com/Infractions_MTL">
                     <div id="twitterLogo" class="bg-white card"></div>
@@ -47,7 +35,6 @@
                 <li class="nav-item mx-4">
                     <a href="{{ url_for('profil') }}">
                         <img src="{{ url_for('static', filename='images/photo_par_defaut.png') }}" alt="Profil" width="30" height="30">
->>>>>>> 4171211e813ba0709443afe9d21df90da4026f0a
                     </a>
                 </li>
                 <li class="nav-item mx-4">
