@@ -5,6 +5,8 @@ import secrets
 from functools import wraps
 from typing import List
 import xml.etree.ElementTree as ET
+
+import tweepy
 from flask import Flask, g, redirect, render_template, request, url_for, jsonify, session, abort, make_response
 from flask_mail import Mail, Message
 import requests
@@ -113,6 +115,7 @@ def publier_tweet(infraction: Infractions):
 
 @app.route('/api/infractions-csv-to-db')
 def index():
+    # Pour gérer le problème des connections simultanées dans la BD
     with app.app_context():  # Envelopper le code dans un contexte d'application Flask
         try:
             url = ('https://data.montreal.ca/dataset/05a9e718-6810-4e73-8bb9-5955efeb91a0/resource/7f939a08-be8a-45e1'
@@ -145,8 +148,11 @@ def index():
             else:
                 code = 200  # Code 200, car aucune nouvelles rangées ont été insérées
                 message = 'La base de données est déjà à jour'
-            for infraction in liste_infractions:
-                publier_tweet(infraction)
+            for infraction in liste_infractions:  # Gérer le cas d'un tweet qui rate
+                try:
+                    publier_tweet(infraction)
+                except tweepy.TweepyException as e:
+                    print(str(e))
             return message, code
         except Exception as e:
             return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
