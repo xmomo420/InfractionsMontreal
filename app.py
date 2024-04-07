@@ -477,7 +477,6 @@ def confirmer_suppression(id_utilisateur, token, etablissement):
         ville = donnees[2]
         # Supprimer le token 5 minute après l'accès à cette route
         moment_expiration = datetime.now() + timedelta(minutes=5)
-        # TODO : Régler les problèmes de connection
         scheduler.add_job(supprimer_token, 'date', run_date=moment_expiration,
                           args=[token])
         return render_template('confirmation_suppression.html',

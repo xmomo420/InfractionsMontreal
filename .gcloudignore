@@ -10,12 +10,14 @@
 # If you would like to upload your .git directory, .gitignore file or files
 # from your .gitignore file, remove the corresponding line
 # below:
-# TODO : Ajouter les autres fichiers/répertoires liés à l'environnement de Mouad
 .git
 .gitignore
 .idea
-README.md
 # Python pycache:
 __pycache__/
 # Ignored by the build system
 /setup.cfg
+# Fichiers Markdown
+*.md
+#Intelli-J
+/inrfactionsmontreal.iml
