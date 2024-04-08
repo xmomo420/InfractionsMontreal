@@ -145,10 +145,10 @@ $(document).ready(function() {
                                             '<tr>' +
                                                     '<th scope="col">Date</th>' +
                                                     '<th scope="col">Adresse</th>' +
+                                                    '<th scope="col">Ville</th>' +
                                                     '<th scope="col">Date jugement</th>' +
                                                     '<th scope="col">Montant</th>' +
                                                     '<th scope="col">Propriétaire</th>' +
-                                                    '<th scope="col">Ville</th>' +
                                                     '<th scope="col">Statut</th>' +
                                                     '<th scope="col">Date Statut</th>' +
                                                     '<th scope="col">Catégorie</th>' +
@@ -157,11 +157,11 @@ $(document).ready(function() {
                                             '<tbody>' +
                                                 '<tr>' +
                                                     '<td>' + infraction.date + '</td>' +
-                                                    '<td>' + infraction.adresse + '</td>' +
+                                                    '<td>' + infraction.adresse.substring(0, infraction.adresse.indexOf(',')) + '</td>' +
+                                                    '<td>' + infraction.ville + '</td>' +
                                                     '<td>' + infraction.date_jugement + '</td>' +
                                                     '<td>' + infraction.montant + ' $</td>' +
                                                     '<td>' + infraction.proprietaire + '</td>' +
-                                                    '<td>' + infraction.ville + '</td>' +
                                                     '<td>' + infraction.statut + '</td>' +
                                                     '<td>' + infraction.date_statut + '</td>' +
                                                     '<td>' + infraction.categorie + '</td>' +
