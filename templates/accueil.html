@@ -2,8 +2,7 @@
 {% block content %}
     <div class="bg-primary-subtle container card mb-4 mt-4 p-4 text-center">
         <div class="row g-4">
-            <h1 class="col-md-12 text-center">Contraventions</h1>
-            <hr class="bg-primary border border-dark border-4 card">
+            <h1 class="mb-3">Contraventions</h1>
             <div class="col-md-5 container card p-4 bg-info-subtle">
                 <h4 class="text-center">Recherche de contraventions par date</h4>
                 <hr class="bg-primary border border-dark border-4 card">
@@ -29,16 +28,16 @@
                 <select style="width: 80%" class="form-select mb-3 mx-auto" id="champ-etablissements" aria-label="Default select example">
                     {% if infractions %}
                         <option value="" selected>Liste etablissements</option>
-                        {% for infraction in infractions %}
-                            <option value="{{infraction.id_business}}">
-                                {{ infraction.etablissement }} ({{infraction.id_business}})
+                        {% for etablissement in etalissements %}
+                            <option value="{{etablissement[0]}}">
+                                {{ etablissement[1] }} ({{etablissement[0]}})
                             </option>
                         {% endfor %}
                     {% else %}
                         <option>Aucune infraction trouvée</option>
                     {% endif %}
                 </select>
-                <div id="tableau-etablissement"></div>
+                <div class="mt-3" id="tableau-etablissement"></div>
             </div>
         </div>
     </div>

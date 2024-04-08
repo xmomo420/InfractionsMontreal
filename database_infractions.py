@@ -61,7 +61,8 @@ class DatabaseInfractions:
 
     def get_all_etablissements(self) -> list:
         cursor = self.get_connection().cursor()
-        cursor.execute("SELECT DISTINCT id_business, etablissement FROM infractions")
+        cursor.execute(
+            "SELECT DISTINCT id_business, etablissement FROM infractions ORDER BY etablissement COLLATE NOCASE")
         donnees = cursor.fetchall()
         return donnees
 

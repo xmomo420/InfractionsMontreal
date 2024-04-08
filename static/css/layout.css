@@ -3,8 +3,8 @@
     background-size: 150%;
     background-position: center;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 2.5rem;
+    height: 2.5rem;
 }
 
 .rotation {
@@ -16,6 +16,16 @@
 }
 
 .custom-tooltip {
-  --bs-tooltip-bg: navy;
-  --bs-tooltip-color: var(--bs-white);
+    --bs-tooltip-bg: navy;
+    --bs-tooltip-color: var(--bs-white);
+}
+
+body {
+    background-image: radial-gradient(
+    farthest-corner at 40px 40px,
+    lime 0%,
+    cyan 33%,
+    #f35 100%
+  );
+    min-height: 100vh;
 }

@@ -134,21 +134,39 @@ $(document).ready(function() {
                 .then(response => response.json())  // Convertit la réponse en objet JavaScript
                 .then(data => {
                     // Crée le tableau HTML
-                    let html = '';
-                    data.forEach((infraction, index) => {
+                    let html =
+                               '<h5 class="mb-3 text-start">Renseignements</h5>' +
+                               '<div class="table-responsive text-center">' +
+                                   '<table class="table align-middle table-success table-bordered">' +
+                                       '<thead class="table-warning">' +
+                                           '<tr>' +
+                                               '<th scope="col">Propriétaire</th>' +
+                                               '<th scope="col">Adresse</th>' +
+                                               '<th scope="col">Ville</th>' +
+                                           '</tr>' +
+                                       '</thead>' +
+                                       '<tbody>' +
+                                           '<tr>' +
+                                               '<td>' + data["proprietaire"] + '</td>' +
+                                               '<td>' + data.adresse.substring(0, data.adresse.indexOf(',')) + '</td>' +
+                                               '<td>' + data.ville + '</td>' +
+                                           '</tr>' +
+                                       '</tbody>' +
+                                   '</table>' +
+                               '</div>' +
+                               '<h5 class="text-start mb-3">Infraction(s) :<h5/>';
+                    data["infractions"].forEach((infraction, index) => {
+                        console.log(index);
                         html += '<div class="g-3">' +
-                                    '<h6 class="text-center">Description</h6>' +
-                                    '<p style="text-align: justify">' + infraction.description + '</p>' +
-                                    '<div class="table-responsive text-center">' +
+                                    '<h6 class="text-start">Description</h6>' +
+                                    '<p class="fw-normal" style="font-size: small; text-align: justify">' + infraction.description + '</p>' +
+                                    '<div style="font-size: medium" class="fw-normal table-responsive text-center">' +
                                         '<table class="table align-middle table-secondary table-bordered">' +
                                             '<thead class="table-primary">' +
                                             '<tr>' +
                                                     '<th scope="col">Date</th>' +
-                                                    '<th scope="col">Adresse</th>' +
-                                                    '<th scope="col">Ville</th>' +
                                                     '<th scope="col">Date jugement</th>' +
                                                     '<th scope="col">Montant</th>' +
-                                                    '<th scope="col">Propriétaire</th>' +
                                                     '<th scope="col">Statut</th>' +
                                                     '<th scope="col">Date Statut</th>' +
                                                     '<th scope="col">Catégorie</th>' +
@@ -157,11 +175,8 @@ $(document).ready(function() {
                                             '<tbody>' +
                                                 '<tr>' +
                                                     '<td>' + infraction.date + '</td>' +
-                                                    '<td>' + infraction.adresse.substring(0, infraction.adresse.indexOf(',')) + '</td>' +
-                                                    '<td>' + infraction.ville + '</td>' +
                                                     '<td>' + infraction.date_jugement + '</td>' +
                                                     '<td>' + infraction.montant + ' $</td>' +
-                                                    '<td>' + infraction.proprietaire + '</td>' +
                                                     '<td>' + infraction.statut + '</td>' +
                                                     '<td>' + infraction.date_statut + '</td>' +
                                                     '<td>' + infraction.categorie + '</td>' +
@@ -169,7 +184,7 @@ $(document).ready(function() {
                                             '</tbody>' +
                                         '</table>' +
                                     '</div>' +
-                                    (index !== data.length - 1 ? '<hr class="bg-primary border border-dark border-2 card">' : '') +
+                                    (index !== data["infractions"].length - 1 ? '<hr class="bg-primary border border-dark border-2 card">' : '') +
                                 '</div>';
                     });
                     // Met à jour le contenu du tableau

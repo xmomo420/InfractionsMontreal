@@ -85,12 +85,14 @@ def close_connection(exception):
 def home():
     try:
         infractions = get_db_infractions().get_infractions()
+        etalissements = get_db_infractions().get_all_etablissements()
         if len(infractions) == 0:
             return redirect(url_for('index')), 302
         else:
             return render_template('accueil.html',
                                    message=request.args.get('message', None),
-                                   nom_page='Infractions Montréal', infractions=infractions), 200
+                                   nom_page='Infractions Montréal', infractions=infractions,
+                                   etalissements=etalissements), 200
     except Exception as e:
         return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
@@ -200,7 +202,8 @@ def etablissement(id_business):
         if len(infractions_json) == 0:
             return 'Aucune infraction trouvée', 404
         else:
-            return jsonify(infractions_json), 200
+            return jsonify({"infractions": infractions_json, "proprietaire": infractions[0].proprietaire,
+                            "adresse": infractions[0].adresse, "ville": infractions[0].ville}), 200
     except Exception as e:
         return (f'Une erreur interne s\'est produite. L\'erreur a été signalée à l\'équipe de développement.: {str(e)}',
                 500)
