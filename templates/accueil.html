@@ -18,7 +18,9 @@
                     </div>
                     <button id="button-recherche" class="btn btn-primary">Rechercher</button>
                 </div>
-                <div class="card" id="resultat-recherche" style="overflow-x: auto; overflow-y: auto; max-height: 100vh;"></div>
+                <div class="table-responsive text-center" id="resultat-recherche"
+                     style="overflow-x: auto; overflow-y: auto; max-height: 100vh;">
+                </div>
             </div>
             <div class="col-md-6 container card p-4 bg-info-subtle">
                 <h4 class="text-center">Recherche par nom d'établissements</h4>
@@ -36,7 +38,7 @@
                         <option>Aucune infraction trouvée</option>
                     {% endif %}
                 </select>
-                <div class="card" id="tableau-etablissement" style="overflow-x: auto; overflow-y: auto; max-height: 100vh;"></div>
+                <div id="tableau-etablissement"></div>
             </div>
         </div>
     </div>

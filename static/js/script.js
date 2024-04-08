@@ -20,12 +20,31 @@ $(document).ready(function() {
             });
 
             // Créer le tableau HTML
-            let html = '<table class="table table-striped"><thead><tr class="text-center"><th>Etablissement</th><th>Occurrences</th><th>Action</th></tr></thead><tbody>';
+            let html = '<table class="table align-middle table-secondary table-bordered">' +
+                                '<thead class="table-primary">' +
+                                    '<tr>' +
+                                        '<th scope="col">Etablissement</th>' +
+                                        '<th scope="col">Occurrences</th>' +
+                                        '<th scope="col"></th>' +
+                                    '</tr>' +
+                                '</thead>' +
+                                '<tbody>';
             if (Object.keys(counts).length === 0) {
-                html += '<tr><td colspan="3">Aucun résultat</td></tr>';
+                html += '<tr>' +
+                            '<td colspan="3">Aucun résultat</td>' +
+                        '</tr>';
             }
             for (let etablissement in counts) {
-                html += '<tr><td>' + etablissement + '</td><td>' + counts[etablissement] + '</td><td><button id="button-modifier" class="btn btn-outline-primary mt-3">Modifier</button><button id="button-supprimer" class="btn btn-outline-primary mt-3 ml-2">Supprimer</button></td></tr>';
+                html += '<tr>' +
+                            '<td>' + etablissement + '</td>' +
+                            '<td>' + counts[etablissement] + '</td>' +
+                            '<td>' +
+                                '<div class="d-flex text-start">' +
+                                    '<button id="button-modifier" class="btn btn-sm btn-success mx-1">Modifier</button>' +
+                                    '<button id="button-supprimer" class="btn btn-sm btn-danger">Supprimer</button>' +
+                                '</div>' +
+                            '</td>' +
+                        '</tr>';
             }
             html += '</tbody></table>';
             $('#resultat-recherche').html(html);
@@ -115,12 +134,44 @@ $(document).ready(function() {
                 .then(response => response.json())  // Convertit la réponse en objet JavaScript
                 .then(data => {
                     // Crée le tableau HTML
-                    let html = '<table class="table table-striped"><tr><th>Poursuite(ID)</th><th>Business(ID)</th><th>Date</th><th>Description</th><th>Adresse</th><th>Date jugement</th><th>Etablissement</th><th>Montant</th><th>Proprietaire</th><th>Ville</th><th>Statut</th><th>Date statut</th><th>Categorie</th></tr>'
-                    data.forEach(infraction => {
-                        html += '<tr> <td>' + infraction.id_poursuite + '</td> <td>' + infraction.id_business + '</td> <td>' + infraction.date + '</td> <td>' + infraction.description + '</td> <td>' + infraction.adresse + '</td> <td>' + infraction.date_jugement + '</td> <td>' + infraction.etablissement + '</td> <td>' + infraction.montant + '</td> <td>' + infraction.proprietaire + '</td> <td>' + infraction.ville + '</td> <td>' + infraction.statut + '</td> <td>' + infraction.date_statut + '</td> <td>' + infraction.categorie + '</td> </tr>';
+                    let html = '';
+                    data.forEach((infraction, index) => {
+                        html += '<div class="g-3">' +
+                                    '<h6 class="text-center">Description</h6>' +
+                                    '<p style="text-align: justify">' + infraction.description + '</p>' +
+                                    '<div class="table-responsive text-center">' +
+                                        '<table class="table align-middle table-secondary table-bordered">' +
+                                            '<thead class="table-primary">' +
+                                            '<tr>' +
+                                                    '<th scope="col">Date</th>' +
+                                                    '<th scope="col">Adresse</th>' +
+                                                    '<th scope="col">Date jugement</th>' +
+                                                    '<th scope="col">Montant</th>' +
+                                                    '<th scope="col">Propriétaire</th>' +
+                                                    '<th scope="col">Ville</th>' +
+                                                    '<th scope="col">Statut</th>' +
+                                                    '<th scope="col">Date Statut</th>' +
+                                                    '<th scope="col">Catégorie</th>' +
+                                                '</tr>' +
+                                            '</thead>' +
+                                            '<tbody>' +
+                                                '<tr>' +
+                                                    '<td>' + infraction.date + '</td>' +
+                                                    '<td>' + infraction.adresse + '</td>' +
+                                                    '<td>' + infraction.date_jugement + '</td>' +
+                                                    '<td>' + infraction.montant + ' $</td>' +
+                                                    '<td>' + infraction.proprietaire + '</td>' +
+                                                    '<td>' + infraction.ville + '</td>' +
+                                                    '<td>' + infraction.statut + '</td>' +
+                                                    '<td>' + infraction.date_statut + '</td>' +
+                                                    '<td>' + infraction.categorie + '</td>' +
+                                                '</tr>' +
+                                            '</tbody>' +
+                                        '</table>' +
+                                    '</div>' +
+                                    (index !== data.length - 1 ? '<hr class="bg-primary border border-dark border-2 card">' : '') +
+                                '</div>';
                     });
-                    html += '</table>';
-
                     // Met à jour le contenu du tableau
                     $('#tableau-etablissement').html(html);
                 })
