@@ -13,7 +13,7 @@
 </head>
 <body class="bg-info-subtle">
 <!-- Barre de navigation -->
-<nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-primary border-bottom border-2 border-dark-subtle rounded-bottom">
+<nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-light border-bottom border-2 border-dark-subtle rounded-bottom navbar-custom">
     <div class="container-fluid">
         <!-- Lien vers la page d'accueil -->
         <a class="ms-4 border-end px-4 ps-0 navbar-brand fw-bold" href="{{ url_for('home') }}">Accueil</a>
@@ -42,7 +42,7 @@
                 </li>
                 <li class="nav-item mx-4">
                     <a href="{{ url_for('logout') }}">
-                        <button class="btn btn-danger" type="button">Déconnexion</button>
+                        <button class="btn btn-danger border border-white border-2" type="button">Déconnexion</button>
                     </a>
                 </li>
             {% else %}

@@ -29,3 +29,7 @@ body {
   );
     min-height: 100vh;
 }
+
+.navbar-custom {
+    background: linear-gradient(to right, dodgerblue, royalblue, #4633f1, #7a03ef, purple, #ff3355);
+}
