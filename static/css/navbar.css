@@ -6,3 +6,16 @@
     width: 40px;
     height: 40px;
 }
+
+.rotation {
+    transition: transform 0.5s;
+}
+
+.rotation:hover {
+    transform: rotate(-20deg);
+}
+
+.custom-tooltip {
+  --bs-tooltip-bg: navy;
+  --bs-tooltip-color: var(--bs-white);
+}

@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="bg-primary-subtle container card border-2 p-4 m-4">
+    <div class="bg-primary-subtle container card border-2 p-4 mt-4 mb-4">
         <div style="display: none" id="conteneurMessage" class="container text-center alert alert-danger" role="alert">
             <h3 id="contenuMessage" class="alert-heading"></h3>
         </div>
@@ -70,7 +70,7 @@
                         	<tr id="{{ etablissement[0] }}">
                                 <td>{{ etablissement[1] }}</td>
                                 <td>{{ etablissement[0] }}</td>
-                                <td>
+                                <td style="width: 15%">
                                     <button class="btn btn-danger" type="button"
                                             onclick="supprimerEtablissement({{ etablissement[0] }})">Supprimer
                                     </button>

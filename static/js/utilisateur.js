@@ -21,6 +21,7 @@ function ajouterDansLaTable(nom, idBusiness) {
     boutonSuppression.setAttribute("type", "button");
     boutonSuppression.classList.add("btn", "btn-danger");
     let colonneBouton = document.createElement("td");
+    colonneBouton.style.width = "15%";
     colonneBouton.appendChild(boutonSuppression);
     tr.appendChild(colonneNom);
     tr.appendChild(colonneId);
