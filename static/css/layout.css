@@ -33,3 +33,11 @@ body {
 .navbar-custom {
     background: linear-gradient(to right, dodgerblue, royalblue, #4633f1, #7a03ef, purple, #ff3355);
 }
+
+#photoActuelle {
+    width: 40%;
+}
+
+#rotation-img-nav {
+    height: 2.5rem;
+}

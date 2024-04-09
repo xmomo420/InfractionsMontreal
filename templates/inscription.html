@@ -1,100 +1,101 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div style="width: 55%" class="bg-primary-subtle container border-2 card mt-4 mb-4 p-4">
-        <!-- Afficher le message, s'il y en a un -->
-        <div style="display: none" id="conteneurMessage" class="text-center alert alert-danger" role="alert">
-            <h3 id="message" class="alert-heading"></h3>
+<div style="width: 55%" class="bg-primary-subtle container border-2 card mt-4 mb-4 p-4">
+    <!-- Afficher le message, s'il y en a un -->
+    <div style="display: none" id="conteneurMessage" class="text-center alert alert-danger" role="alert">
+        <h3 id="message" class="alert-heading"></h3>
+    </div>
+    <!-- Formulaire d'inscription -->
+    <form id="formulaireInscription" class="row g-4">
+        <h2 class="text-center">Nouvel utilisateur</h2>
+        <hr class="card border border-dark border-4">
+        <h5>Renseignements personnels</h5>
+        <!-- Prénom -->
+        <div class="col-md-6">
+            <label class="form-label" for="prenom">Prénom</label>
+            <input id="prenom" class="form-control" type="text" name="prenom" placeholder="Entrez votre prénom">
+            <div class="invalid-feedback">{{ criteres["prenom"] }}</div>
         </div>
-        <!-- Formulaire d'inscription -->
-        <form id="formulaireInscription" class="row g-4">
-            <h2 class="text-center">Nouvel utilisateur</h2>
-            <hr class="card border border-dark border-4">
-            <h5>Renseignements personnels</h5>
-            <!-- Prénom -->
-            <div class="col-md-6">
-                <label class="form-label" for="prenom">Prénom</label>
-                <input id="prenom" class="form-control" type="text" name="prenom" placeholder="Entrez votre prénom">
-                <div class="invalid-feedback">{{ criteres["prenom"] }}</div>
+        <!-- Nom -->
+        <div class="col-md-6">
+            <label class="form-label" for="nom">Nom</label>
+            <input id="nom" class="form-control" type="text" name="nom" placeholder="Entrez votre nom">
+            <div class="invalid-feedback">{{ criteres["nom"] }}</div>
+        </div>
+        <!-- Courriel -->
+        <div class="col-md-6">
+            <label class="form-label" for="courriel">Courriel</label>
+            <input id="courriel" class="form-control" name="courriel" type="email"
+                placeholder="Entrez votre adresse courriel">
+            <div class="invalid-feedback">{{ criteres["courriel"] }}</div>
+        </div>
+        <!-- Mot de passe -->
+        <div class="col-md-6">
+            <label class="form-label" for="motDePasse">Mot de passe</label>
+            <input id="motDePasse" class="form-control" type="password" name="mot_de_passe"
+                placeholder="Entrez un mot de passe" aria-describedby="aideMotDePasse">
+            <div class="invalid-feedback">{{ criteres["mot_de_passe"] }}</div>
+            <div id="aideMotDePasse" class="form-text mt-2">
+                <h6 style="font-size: 0.85rem;">Critères du mot de passe</h6>
+                <ul style="font-size: 0.85rem;" class="text-start">
+                    {% if criteres_mdp %}
+                    {% for critere in criteres_mdp %}
+                    <li class="list-bullet">{{ critere }}</li>
+                    {% endfor %}
+                    {% endif %}
+                </ul>
             </div>
-            <!-- Nom -->
-            <div class="col-md-6">
-                <label class="form-label" for="nom">Nom</label>
-                <input id="nom" class="form-control" type="text" name="nom" placeholder="Entrez votre nom">
-                <div class="invalid-feedback">{{ criteres["nom"] }}</div>
+        </div>
+        <hr class="border border-dark border-4 card">
+        <h5>Établissements à surveiller</h5>
+        <!-- Établissements à surveiller -->
+        <div class="col-md-5">
+            <label for="listeEtablissements">
+                <select id="listeEtablissements" class="form-select">
+                    <option value="null,-1" selected>Choisissez un établissement à ajouter</option>
+                    {% if liste %}
+                    {% for etablissement in liste %}
+                    <option value="{{etablissement[1]}},{{ etablissement[0] }}">
+                        {{ etablissement[1] }} ({{ etablissement[0] }})
+                    </option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+            </label>
+            <!-- Bouton pour ajouter l'établissement -->
+            <div class="mt-3">
+                <button type="button" onclick="ajouterEtablissement()" class="btn btn-success">Ajouter</button>
             </div>
-            <!-- Courriel -->
-            <div class="col-md-6">
-                <label class="form-label" for="courriel">Courriel</label>
-                <input id="courriel" class="form-control" name="courriel" type="email" placeholder="Entrez votre adresse courriel">
-                <div class="invalid-feedback">{{ criteres["courriel"] }}</div>
-            </div>
-            <!-- Mot de passe -->
-            <div class="col-md-6">
-                <label class="form-label" for="motDePasse">Mot de passe</label>
-                <input id="motDePasse" class="form-control" type="password" name="mot_de_passe"
-                       placeholder="Entrez un mot de passe" aria-describedby="aideMotDePasse">
-                <div class="invalid-feedback">{{ criteres["mot_de_passe"] }}</div>
-                <div id="aideMotDePasse" class="form-text mt-2">
-                    <h6 style="font-size: 0.85rem;">Critères du mot de passe</h6>
-                    <ul style="font-size: 0.85rem;" class="text-start">
-                        {% if criteres_mdp %}
-                            {% for critere in criteres_mdp %}
-                            	<li class="list-bullet">{{ critere }}</li>
-                            {% endfor %}
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-            <hr class="border border-dark border-4 card">
-            <h5>Établissements à surveiller</h5>
-            <!-- Établissements à surveiller -->
-            <div class="col-md-5">
-                <label for="listeEtablissements">
-                    <select id="listeEtablissements" class="form-select">
-                        <option value="null,-1" selected>Choisissez un établissement à ajouter</option>
-                        {% if liste %}
-                            {% for etablissement in liste %}
-                                <option value="{{etablissement[1]}},{{ etablissement[0] }}">
-                                    {{ etablissement[1] }} ({{ etablissement[0] }})
-                                </option>
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                </label>
-                <!-- Bouton pour ajouter l'établissement -->
-                <div class="mt-3">
-                    <button type="button" onclick="ajouterEtablissement()" class="btn btn-success">Ajouter</button>
-                </div>
-            </div>
-            <!-- Liste des établissements à surveiller -->
-            <div class="table-responsive text-center col-md-7">
-                <table class="table align-middle table-secondary table-bordered">
-                    <thead class="table-primary">
+        </div>
+        <!-- Liste des établissements à surveiller -->
+        <div class="table-responsive text-center col-md-7">
+            <table class="table align-middle table-secondary table-bordered">
+                <thead class="table-primary">
                     <tr>
                         <th scope="col">Nom</th>
                         <th scope="col">ID</th>
                         <th scope="col"></th>
                     </tr>
-                    </thead>
-                    <tbody id="corpsTable">
-                        <!-- Contenu ajouté à l'aide de JS -->
-                    </tbody>
-                </table>
-            </div>
-            <!-- Bouton de soumission -->
-            <div class="mb-3 mt-6 d-flex gap-4 justify-content-center">
-                <button id="boutonInscription" class="btn btn-lg btn-primary" type="submit">Soumettre</button>
-                <a href="{{ url_for('home') }}">
-                    <button type="button" class="btn btn-lg btn-warning">Annuler</button>
-                </a>
-            </div>
-        </form>
-    </div>
-    <!-- Déclaration d'une variable globale pour utiliser l'interpréteur Jinja2 -->
-    <script>
-        const urlHome = "{{ url_for('home') }}";
-        const urlApiInscription = "{{ url_for('traitement_inscription') }}";
-    </script>
-    <!-- Ajout du script JS -->
-    <script src="{{ url_for('static', filename='js/utilisateur.js') }}"></script>
+                </thead>
+                <tbody id="corpsTable">
+                    <!-- Contenu ajouté à l'aide de JS -->
+                </tbody>
+            </table>
+        </div>
+        <!-- Bouton de soumission -->
+        <div class="mb-3 mt-6 d-flex gap-4 justify-content-center">
+            <button id="boutonInscription" class="btn btn-lg btn-primary" type="submit">Soumettre</button>
+            <a href="{{ url_for('home') }}" class="btn btn-lg btn-warning">
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+<!-- Déclaration d'une variable globale pour utiliser l'interpréteur Jinja2 -->
+<script>
+    const urlHome = "{{ url_for('home') }}";
+    const urlApiInscription = "{{ url_for('traitement_inscription') }}";
+</script>
+<!-- Ajout du script JS -->
+<script src="{{ url_for('static', filename='js/utilisateur.js') }}"></script>
 {% endblock %}

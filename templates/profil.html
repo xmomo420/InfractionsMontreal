@@ -1,98 +1,97 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="bg-primary-subtle container card border-2 p-4 mt-4 mb-4">
-        <div style="display: none" id="conteneurMessage" class="container text-center alert alert-danger" role="alert">
-            <h3 id="contenuMessage" class="alert-heading"></h3>
+<div class="bg-primary-subtle container card border-2 p-4 mt-4 mb-4">
+    <div style="display: none" id="conteneurMessage" class="container text-center alert alert-danger" role="alert">
+        <h3 id="contenuMessage" class="alert-heading"></h3>
+    </div>
+    <form id="formulaireModifications" class="row g-4" enctype="multipart/form-data">
+        <h2 class="text-center">Profil de {{ prenom }} {{ nom }}</h2>
+        <hr class="border border-dark border-4 card">
+        <h5 class="text-center">Renseignements personnels</h5>
+        <div class="col-md-4">
+            <label class="form-label" for="prenom">Prénom</label>
+            <input readonly class="form-control" id="prenom" value="{{ prenom }}" aria-describedby="aidePrenom"
+                type="text">
+            <div class="form-text" id="aidePrenom">{{ aide['prenom'] }}</div>
         </div>
-        <form id="formulaireModifications" class="row g-4" enctype="multipart/form-data">
-            <h2 class="text-center">Profil de {{ prenom }} {{ nom }}</h2>
-            <hr class="border border-dark border-4 card">
-            <h5 class="text-center">Renseignements personnels</h5>
-            <div class="col-md-4">
-                <label class="form-label" for="prenom">Prénom</label>
-                <input readonly class="form-control" id="prenom" value="{{ prenom }}" aria-describedby="aidePrenom"
-                       type="text">
-                <div class="form-text" id="aidePrenom">{{ aide['prenom'] }}</div>
+        <div class="col-md-4">
+            <label class="form-label" for="nom">Nom</label>
+            <input readonly class="form-control" id="nom" value="{{ nom }}" aria-describedby="aideNom" type="text">
+            <div class="form-text" id="aideNom">{{ aide['nom'] }}</div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="courriel">Adresse courriel</label>
+            <input readonly class="form-control" id="courriel" value="{{ courriel }}" aria-describedby="aideCourriel"
+                type="email">
+            <div class="form-text" id="aideCourriel">{{ aide['courriel'] }}</div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Photo actuelle</label>
+            <img id="photoActuelle" class="img-fluid card" src="data:image/*;base64,{{ photo }}" alt="Photo de profil">
+        </div>
+        <!-- Champs modifiables -->
+        <div class="col-md-4">
+            <label class="form-label" for="nouvellePhoto">Nouvelle photo</label>
+            <input class="form-control" name="photo" id="nouvellePhoto" type="file"
+                accept="image/png, image/jpeg, image/jpg">
+        </div>
+        <hr class="border border-dark border-4 card">
+        <h5 class="text-center">Établissements à surveiller</h5>
+        <div class="col-md-4">
+            <label for="listeEtablissements">
+                <select name="etablissements" id="listeEtablissements" class="form-select">
+                    <option value="null,-1" selected>Choisissez un établissement à ajouter</option>
+                    {% if liste %}
+                    {% for etablissement in liste %}
+                    <option value="{{etablissement[1]}},{{ etablissement[0] }}">
+                        {{ etablissement[1] }} ({{ etablissement[0] }})
+                    </option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+            </label>
+            <!-- Bouton pour ajouter l'établissement -->
+            <div class="mt-3">
+                <button type="button" onclick="ajouterEtablissement()" class="btn btn-success">Ajouter</button>
             </div>
-            <div class="col-md-4">
-                <label class="form-label" for="nom">Nom</label>
-                <input readonly class="form-control" id="nom" value="{{ nom }}" aria-describedby="aideNom" type="text">
-                <div class="form-text" id="aideNom">{{ aide['nom'] }}</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label" for="courriel">Adresse courriel</label>
-                <input readonly class="form-control" id="courriel" value="{{ courriel }}"
-                       aria-describedby="aideCourriel" type="email">
-                <div class="form-text" id="aideCourriel">{{ aide['courriel'] }}</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label" for="photoActuelle">Photo actuelle</label>
-                <img id="photoActuelle" class="img-fluid card" src="data:image/*;base64,{{ photo }}" width="40%" alt="Photo de profil">
-            </div>
-            <!-- Champs modifiables -->
-            <div class="col-md-4">
-                <label class="form-label" for="nouvellePhoto">Nouvelle photo</label>
-                <input class="form-control" name="photo" id="nouvellePhoto" type="file"
-                       accept="image/png, image/jpeg, image/jpg">
-            </div>
-            <hr class="border border-dark border-4 card">
-            <h5 class="text-center">Établissements à surveiller</h5>
-            <div class="col-md-4">
-                <label for="listeEtablissements">
-                    <select name="etablissements" id="listeEtablissements" class="form-select">
-                        <option value="null,-1" selected>Choisissez un établissement à ajouter</option>
-                        {% if liste %}
-                            {% for etablissement in liste %}
-                                <option value="{{etablissement[1]}},{{ etablissement[0] }}">
-                                    {{ etablissement[1] }} ({{ etablissement[0] }})
-                                </option>
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                </label>
-                <!-- Bouton pour ajouter l'établissement -->
-                <div class="mt-3">
-                    <button type="button" onclick="ajouterEtablissement()" class="btn btn-success">Ajouter</button>
-                </div>
-            </div>
-            <!-- Liste des établissements à surveiller -->
-            <div class="table-responsive text-center col-md-7">
-                <table class="table align-middle table-secondary table-bordered">
-                    <thead class="table-primary">
+        </div>
+        <!-- Liste des établissements à surveiller -->
+        <div class="table-responsive text-center col-md-7">
+            <table class="table align-middle table-secondary table-bordered">
+                <thead class="table-primary">
                     <tr>
                         <th scope="col">Nom</th>
                         <th scope="col">ID</th>
                         <th scope="col"></th>
                     </tr>
-                    </thead>
-                    <tbody id="corpsTable">
-                        {% for etablissement in etablissements %}
-                        	<tr id="{{ etablissement[0] }}">
-                                <td>{{ etablissement[1] }}</td>
-                                <td>{{ etablissement[0] }}</td>
-                                <td style="width: 15%">
-                                    <button class="btn btn-danger" type="button"
-                                            onclick="supprimerEtablissement({{ etablissement[0] }})">Supprimer
-                                    </button>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        <!-- Reste des rangées ajoutées à l'aide de JS -->
-                    </tbody>
-                </table>
-            </div>
-            <!-- Bouton de soumission -->
-            <div class="mb-3 mt-6 d-flex gap-4 justify-content-center">
-                <button class="btn btn-lg btn-primary" type="submit">Soumettre</button>
-                <a href="{{ url_for('home') }}">
-                    <button type="button" class="btn btn-lg btn-warning">Annuler</button>
-                </a>
-            </div>
-        </form>
-    </div>
-    <script>
-        const urlHome = "{{ url_for('home') }}";
-        const urlApiModifications = "{{ url_for('traitement_modifications', id=session['id_utilisateur']) }}";
-    </script>
-    <script src="{{ url_for('static', filename='js/utilisateur.js') }}"></script>
+                </thead>
+                <tbody id="corpsTable">
+                    {% for etablissement in etablissements %}
+                    <tr id="{{ etablissement[0] }}">
+                        <td>{{ etablissement[1] }}</td>
+                        <td>{{ etablissement[0] }}</td>
+                        <td style="width: 15%">
+                            <button class="btn btn-danger" type="button"
+                                onclick="supprimerEtablissement({{ etablissement[0] }})">Supprimer</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <!-- Reste des rangées ajoutées à l'aide de JS -->
+                </tbody>
+            </table>
+        </div>
+        <!-- Bouton de soumission -->
+        <div class="mb-3 mt-6 d-flex gap-4 justify-content-center">
+            <button class="btn btn-lg btn-primary" type="submit">Soumettre</button>
+            <a href="{{ url_for('home') }}" class="btn btn-lg btn-warning">
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+<script>
+    const urlHome = "{{ url_for('home') }}";
+    const urlApiModifications = "{{ url_for('traitement_modifications', id=session['id_utilisateur']) }}";
+</script>
+<script src="{{ url_for('static', filename='js/utilisateur.js') }}"></script>
 {% endblock %}

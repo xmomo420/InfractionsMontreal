@@ -3,7 +3,7 @@
 ## Prérequis
 `pip install -r requirements.txt`
 
-## Correction 
+## Correction
 - Compte twitter : [@Infractions_MTL](https://twitter.com/Infractions_MTL)
 - Déploiement Google Cloud : [Cliquer](https://t.co/TLECkN3NWM)
 
@@ -11,7 +11,7 @@
 
 | Adresse courriel            | Mot de passe       |
 |-----------------------------|--------------------|
-| bendourou.mohamed@uqam.ca   | Poulet420!         |
+| bendourou.mohamed@courrier.uqam.ca   | Poulet420!         |
 | destinataire5190@gmail.com  | xDestinataire5190- |
 
 <p style="text-align: justify; font-style: italic; font-weight: bold">(Les informations de connexion pour la boîte courriel du destinaire sont les mêmes que celles indiquées ci-haut )
@@ -32,10 +32,10 @@
 | C1             | <span style="color: green;">✓</span> |
 | C2             | <span style="color: green;">✓</span> |
 | C3             | <span style="color: green;">✓</span> |
-| D1             | <span style="color: red;">✗</span>   |
-| D2             | <span style="color: red;">✗</span>   |
-| D3             | <span style="color: red;">✗</span>   |
-| D4             | <span style="color: red;">✗</span>   |
+| D1             | <span style="color: green;">✓</span> |
+| D2             | <span style="color: green;">✓</span> |
+| D3             | <span style="color: green;">✓</span> |
+| D4             | <span style="color: green;">✓</span> |
 | E1             | <span style="color: green;">✓</span> |
 | E2             | <span style="color: green;">✓</span> |
 | E3             | <span style="color: green;">✓</span> |
