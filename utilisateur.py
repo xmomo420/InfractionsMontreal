@@ -1,14 +1,7 @@
 class Utilisateur:
 
-    def __init__(self,
-                 _id,
-                 prenom: str,
-                 nom: str,
-                 courriel: str,
-                 _hash,
-                 salt,
-                 photo,
-                 etablissements):
+    def __init__(self, _id, prenom: str, nom: str, courriel: str, _hash, salt,
+                 photo, etablissements):
         self.id = _id
         self.prenom = prenom
         self.nom = nom
