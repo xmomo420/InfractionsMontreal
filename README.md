@@ -17,7 +17,7 @@
 <p style="text-align: justify; font-style: italic; font-weight: bold">(Les informations de connexion pour la boîte courriel du destinaire sont les mêmes que celles indiquées ci-haut )
 </p>
 
-### Fonctionnalités : <span style="color: red;">150</span>/200
+### Fonctionnalités : <span style="color: red;">200</span>/200
 
 | Fonctionnalité | Statut                               |
 |----------------|--------------------------------------|
