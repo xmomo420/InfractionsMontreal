@@ -1,6 +1,17 @@
 class Infractions:
-    def __init__(self, id_poursuite, id_business, date, description, adresse, date_jugement, etablissement, montant,
-                 proprietaire, ville, statut, date_statut, categorie):
+    def __init__(self,
+                 id_poursuite,
+                 id_business,
+                 date, description,
+                 adresse,
+                 date_jugement,
+                 etablissement,
+                 montant,
+                 proprietaire,
+                 ville,
+                 statut,
+                 date_statut,
+                 categorie):
         self.id_poursuite = id_poursuite
         self.id_business = id_business
         self.date = date
@@ -14,7 +25,6 @@ class Infractions:
         self.statut = statut
         self.date_statut = date_statut
         self.categorie = categorie
-
 
     def to_dict(self):
         return {

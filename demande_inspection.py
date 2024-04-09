@@ -1,5 +1,13 @@
 class Inspection:
-    def __init__(self, id, etablissement, adresse, ville, date_visite_client, nom_client, prenom_client, description_probleme):
+    def __init__(self,
+                 id,
+                 etablissement,
+                 adresse,
+                 ville,
+                 date_visite_client,
+                 nom_client,
+                 prenom_client,
+                 description_probleme):
         self.id = id
         self.etablissement = etablissement
         self.adresse = adresse

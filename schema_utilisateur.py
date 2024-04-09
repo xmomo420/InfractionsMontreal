@@ -16,19 +16,24 @@ valider_nouvel_utilisateur = {
         },
         "confirmation_courriel": {
             "type": "string",
-            "pattern": "^\S+@\S+\.\S+$"
+            "pattern": r"^\S+@\S+\.\S+$"
         },
         "mot_de_passe": {
             "type": "string",
             "minLength": 8,
-            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$"
+            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*"
+            "[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$"
         },
         "etablissements": {
             "type": "array",
             "items": {"type": "number"}
         }
     },
-    "required": ["prenom", "nom", "courriel", "mot_de_passe", "etablissements"],
+    "required": ["prenom",
+                 "nom",
+                 "courriel",
+                 "mot_de_passe",
+                 "etablissements"],
     "additionalProperties": False,
 }
 
@@ -38,7 +43,7 @@ valider_login = {
     "properties": {
         "courriel": {
             "type": "string",
-            "pattern": "^\S+@\S+\.\S+$"
+            "pattern": r"^\S+@\S+\.\S+$"
         },
         "mot_de_passe": {
             "type": "string",

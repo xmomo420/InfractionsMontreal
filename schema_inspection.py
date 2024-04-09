@@ -10,6 +10,12 @@ inspection_schema = {
         'prenom_client': {'type': 'string'},
         'description_probleme': {'type': 'string'},
     },
-    'required': ['etablissement', 'adresse', 'ville', 'date_visite_client', 'nom_client', 'prenom_client', 'description_probleme'],
+    'required': ['etablissement',
+                 'adresse',
+                 'ville',
+                 'date_visite_client',
+                 'nom_client',
+                 'prenom_client',
+                 'description_probleme'],
     'additionalProperties': False
 }
