@@ -19,5 +19,3 @@ __pycache__/
 /setup.cfg
 # Fichiers Markdown
 *.md
-#Intelli-J
-/inrfactionsmontreal.iml

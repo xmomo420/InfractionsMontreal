@@ -1,7 +1,12 @@
 {% extends "layout.html" %}
 {% block content %}
     <div style="width: 35%" class="bg-primary-subtle justify-content-center container card p-4 mt-4 mb-4">
-        <!-- Afficher message s'il y a lieu -->
+        <!-- Afficher message(s) s'il y a lieu -->
+        {% if message %}
+        <div class="mb-3 text-center alert alert-danger" role="alert">
+            <h3 class="alert-heading">{{ message }}</h3>
+        </div>
+        {% endif %}
         <div style="display: none" id="conteneurMessage" class="mb-3 text-center alert alert-danger" role="alert">
             <h3 id="message" class="alert-heading"></h3>
         </div>

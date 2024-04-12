@@ -2,69 +2,43 @@
 title: Infractions Montréal
 baseUri: http://127.0.0.1:5000
 version: 1
-# TODO : À Compléter
+
 types:
   Utilisateur:
     type: object
     properties:
       prenom: {type: string}
       nom: {type: string}
-      courriel: {type: string}
-      confirmation_courriel: {type: string}
-      mot_de_passe: {type: string}
-      confirmation_mot_de_passe: {type: string}
-      etablissements:
-        type: array
-        items: {type: string}
+      courriel: {
+        type: string,
+        format: email
+      }
+      mot_de_passe: {
+        type: string,
+        minLength: 8,
+        pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8}$
+      }
+      etablissements: {
+        type: array,
+        items: {type: number},
+        description: Liste des identifiants des établissements surveillés par l'utilisateur
+      }
+      photo: {
+        type: file,
+        required: false,
+        fileTypes: ['image/jpeg', 'image/png', 'image/jpg'],
+        description: Fichier image au format png, jpg ou jpeg
+      }
+    required: [prenom, nom, courriel, mot_de_passe, etablissements]
     additionalProperties: false
     example: |
       {
-        "prenom": "Jeam",
+        "prenom": "Jean",
         "nom": "Mathieu",
-        "courriel": "jean.mathieu69@hotmail.com",
-        "confirmation_courriel": "jean.mathieu69@hotmail.com",
+        "courriel": "jeanmath@gmail.com",
         "mot_de_passe": "pouletGrille69!",
-        "etablissements": ["Yumi Burger", "Pizza St-Laurent", "Harveys"]
-      }
-
-/api/inscription:
-  post:
-    description: L'utilisateur se créé un compte
-    body:
-      application/json:
-        type: Utilisateur
-    responses:
-      201:
-        body:
-          application/json:
-            example: |
-              {
-                "message": "L'utilisateur Aaron Osorio a été ajouté avec succès."
-              }
-      400:champs_manquant:
-        description: Champ manquant, tous les champs doivent être remplis et respecter les critères
-        body:
-          application/json:
-            example: |
-              {
-                "'mot_de_passe' is a required property"
-              }
-      400:mauvais type:
-        description: Champ du mauvais type
-        body:
-          application/json:
-            example: |
-              {
-                "12 is not of type 'string'"
-              }
-      500:
-        description: Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement.
-        body:
-          application/json:
-            example: |
-              {
-                "error": "Une erreur interne s'est produite."
-              }
+        "etablissements": [1045, 1046, 10470],
+        "photo": "photo.png"
 
 types:
   Infraction:
@@ -102,6 +76,29 @@ types:
       "categorie": "XYZ"
 
     }
+
+types:
+    Plainte:
+    type: object
+    properties:
+      id: {type: integer}
+      etablissement: {type: string}
+      adresse: {type: string}
+      date_visite_client: {type: string, format: date}
+      nom_client: {type: string}
+      prenom_client: {type: string}
+      description_probleme: {type: string}
+    additionalProperties: false
+    example: |
+      {
+        "id": 1,
+        "etablissement": "Restaurant XYZ",
+        "adresse": "123 Rue ABC",
+        "date_visite_client": "2022-01-01",
+        "nom_client": "Doe",
+        "prenom_client": "John",
+        "description_probleme": "Problème XYZ"
+      }
 
 /api/contraventions:
   get:
@@ -164,30 +161,6 @@ types:
                 "error": "Une erreur interne s'est produite."
               }
 
-
-types:
-  Plainte:
-    type: object
-    properties:
-      id: {type: integer}
-      etablissement: {type: string}
-      adresse: {type: string}
-      date_visite_client: {type: string, format: date}
-      nom_client: {type: string}
-      prenom_client: {type: string}
-      description_probleme: {type: string}
-    additionalProperties: false
-    example: |
-      {
-        "id": 1,
-        "etablissement": "Restaurant XYZ",
-        "adresse": "123 Rue ABC",
-        "date_visite_client": "2022-01-01",
-        "nom_client": "Doe",
-        "prenom_client": "John",
-        "description_probleme": "Problème XYZ"
-      }
-
 /api/demande-inspections:
   post:
     description: L'utilisateur envoie une plainte pour un établissement
@@ -219,9 +192,7 @@ types:
                 "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
               }
 
-
-
-/api/supprimer-inspection/<int:id_inspection>:
+/api/supprimer-inspection/{int:id_inspection}:
   delete:
     description: Supprime une inspection
     responses:
@@ -242,7 +213,7 @@ types:
               }
 
 
-/api/supprimer-etablissement/<string:etablissement>:
+/api/supprimer-etablissement/{string:etablissement}:
   delete:
     description: Supprime un établissement
     responses:
@@ -261,3 +232,228 @@ types:
               {
                 "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
               }
+
+/api/inscription/traitement:
+  post:
+    description: L'utilisateur crée un compte
+    body:
+      application/json:
+        type: Utilisateur
+    responses:
+      201:
+        description: Tous les champs ont été remplis correctement. L'utilisateur a été ajouté avec succès.
+        body:
+          application/json:
+            example: |
+              {
+                "message": "L'utilisateur a été ajouté avec succès."
+              }
+      200:
+        description: L'adresse courriel est déjà utilisée
+        body:
+          application/json:
+            example: |
+              {
+                "message": "L'adresse courriel "jean.math@gmail.com" est déjà utilisée"
+              }
+      500:
+        description: Une erreur interne s'est produite.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Une erreur interne s'est produite, l'erreur a été signalée à l'équipe de développement"
+              }
+
+/api/profil/modifer/{id}:
+  uriParameters:
+    id:
+      type: integer
+      description: L'identifiant de l'utilisateur dans la base de données
+  put:
+    description: Modifie le profil de l'utilisateur. Uniquement les champs 'photo' et 'etablissements' peuvent être modifiés.
+    body:
+      [  multipart/form-data | application/x-www-form-urlencoded  ]:
+        properties:
+          photo:
+            description: Fichier image au format png, jpg ou jpeg
+            required: false
+            type: file
+            fileTypes: ['image/jpeg', 'image/png', 'image/jpg']
+          etablissements:
+            description: Liste des identifiants des établissements surveillés par l'utilisateur
+            required: false
+            type: array
+            items:
+              type: number
+    responses:
+      200:
+        description: Les données reçues sont valides et le profil de l'utilisateur a été modifié avec succès.
+        body:
+          application/json:
+            example: |
+              {
+                "message": "Modifications apportées avec succès"
+              }
+      500:
+        description: Une erreur interne s'est produite.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
+              }
+      400:
+        description: Les données reçues sont invalides ou manquantes.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Erreur lors de la lecture du fichier : type de fichier invalide"
+              }
+        404:
+          description: L'utilisateur n'existe pas.
+          body:
+            application/json:
+              example: |
+                {
+                  "error": "L'utilisateur n'existe pas."
+                }
+
+/api/login/traitement:
+    post:
+        description: L'utilisateur se connecte
+        body:
+          application/json:
+            properties:
+              courriel:
+                format: email
+                type: string
+              mot_de_passe:
+                type: string
+        responses:
+            200:
+              description: Le mot de passe et courriel sont dans le bon format, donc la requête est valide.
+              body:
+                application/json:
+                  type: string
+            400:
+              description: Un ou plusieurs champs sont manquants et/ou invalides.
+              body:
+                application/json:
+                  type: string
+                  example: |
+                    {
+                      "error": "Un ou plusieurs champs sont invalides"
+                    }
+            500:
+              description: Une erreur interne s'est produite.
+              body:
+                application/json:
+                  type: string
+                  example: |
+                    {
+                      "error": "Une erreur interne s'est produite. L'erreur a été signalée à l'équipe de développement."
+                    }
+
+/api/supprimer-etablissement/{id_utilisateur}&{token}&{etablissement}:
+    uriParameters:
+      id_utilisateur:
+        type: integer
+        description: L'identifiant de l'utilisateur
+      token:
+        type: string
+        description: Le jeton d'authentification de l'utilisateur obtenu dans le courriel
+      etablissement:
+        type: integer
+        description: L'identifiant de l'établissement à supprimer
+    patch:
+        description: Supprime l'établissement de la liste des établissements surveillés par l'utilisateur
+        responses:
+            200:
+              description: L'établissement a été supprimé retiré avec du profil de l'utilisateur avec succès.
+              body:
+                application/json:
+                  type: string
+                  example: |
+                    {
+                      "message": "L'établissement a été supprimé de votre profil"
+                    }
+            403:
+                description: Le jeton d'authentification fourni est invalide ou a expiré.
+                body:
+                  application/json:
+                    type: string
+                    example: |
+                      {
+                        "error": "Le jeton d'authentification fourni est invalide ou a expiré"
+                      }
+
+/api/infractions-etablissements/{format}:
+    uriParameters:
+      format:
+        type: string
+        description: Le format de la réponse (JSON, XML, CSV)
+    get:
+        description: |
+            Ce service permet d'accéder à une liste de tous les établissements ayant commis au moins une infraction.
+            Pour chaque établissement, le nom, l'id ainsi que le nombre d'infractions commise sont affichés.
+            La liste est triée en ordre décroissant du nombre d'infractions commises.
+            Le format de la réponse peut être JSON ou XML ou CSV.
+        responses:
+            200:
+              description: Les données ont été récupérées et traitées avec succès.
+              body:
+                application/json:
+                  type: array
+                  example: |
+                    {[{
+                      "nom": "SUPER MARCHE TROPIC",
+                      "id": 9587,
+                      "nombre_infractions": 19
+                      },
+                      {
+                        "nom": "RESTAURANT JADE QUARTIER CHINOIS",
+                        "id": 14134,
+                        "nombre_infractions": 19
+                      },
+                      {
+                        "nom": "BUFFALO BILL WINGS",
+                        "id": 117214,
+                        "nombre_infractions": 17
+                      }]}
+                application/xml:
+                  type: array
+                  example: |
+                    <etablissements>
+                      <etablissement>
+                        <nom>SUPER MARCHE TROPIC</nom>
+                        <id>9587</id>
+                        <nombre_infractions>19</nombre_infractions>
+                      </etablissement>
+                      <etablissement>
+                        <nom>RESTAURANT JADE QUARTIER CHINOIS</nom>
+                        <id>14134</id>
+                        <nombre_infractions>19</nombre_infractions>
+                      </etablissement>
+                      <etablissement>
+                        <nom>BUFFALO BILL WINGS</nom>
+                        <id>117214</id>
+                        <nombre_infractions>17</nombre_infractions>
+                      </etablissement>
+                text/csv:
+                  example: |
+                    nom,id,nombre_infractions
+                    SUPER MARCHE TROPIC,9587,19
+                    RESTAURANT JADE QUARTIER CHINOIS,14134,19
+                    BUFFALO BILL WINGS,117214,17
+
+            400:
+                description: Le format demandé n'est pas supporté.
+                body:
+                  application/json:
+                    type: string
+                    example: |
+                      {
+                        "error": "Le format "YAML" n'est pas supporté par ce service."
+                      }

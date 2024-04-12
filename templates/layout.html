@@ -67,9 +67,9 @@
         </div>
     </nav>
     <!-- Afficher message s'il y a lieu -->
-    {% if message %}
+    {% if message_logout %}
     <div class="mt-4 container text-center alert alert-success" role="alert">
-        <h3 class="alert-heading">{{ message }}</h3>
+        <h3 class="alert-heading">{{ message_logout }}</h3>
     </div>
     {% endif %} {% block content %}{% endblock %}
     <!-- Ajout Bootstrap -->

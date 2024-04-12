@@ -1,25 +1,20 @@
-# Infractions Montréal
+# <center>Infractions Montréal</center>
+
+## Auteurs
+- Mouad Belbey
+- Mohamed Bendourou
 
 ## Prérequis
 
 `pip install -r requirements.txt`
 
-## Correction
+## Lancer l'application
+`.venv/bin/python3 -m flask run`
 
-- Compte twitter : [@Infractions_MTL](https://twitter.com/Infractions_MTL)
-- Déploiement Google Cloud : [Cliquer](https://t.co/TLECkN3NWM)
+### Correction
+[correction.md](correction.md)
 
-### Liste des utilisateurs
-
-| Adresse courriel            | Mot de passe       |
-|-----------------------------|--------------------|
-| <bendourou.mohamed@courrier.uqam.ca>   | Poulet420!         |
-| <destinataire5190@gmail.com>  | xDestinataire5190- |
-
-<p style="text-align: justify; font-style: italic; font-weight: bold">(Les informations de connexion pour la boîte courriel du destinaire sont les mêmes que celles indiquées ci-haut )
-</p>
-
-### Fonctionnalités : <span style="color: green;">200</span>/200
+### Fonctionnalités implémentées : <span style="color: green;">200</span>/200
 
 | Fonctionnalité | Statut                               |
 |----------------|--------------------------------------|

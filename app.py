@@ -1,44 +1,51 @@
+import base64
+import csv
+import hashlib
 import io
 import json
 import os
 import secrets
-from functools import wraps
-from typing import List
+import uuid
 import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta
+from functools import wraps
+from io import StringIO
+from typing import List
+from urllib.parse import unquote
+import requests
 import tweepy
+import werkzeug.datastructures
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import (Flask, g, redirect, render_template, request, url_for,
                    jsonify, session, abort, make_response)
-from flask_mail import Mail, Message
-import requests
-from schema_utilisateur import valider_nouvel_utilisateur, valider_login
-from schema_inspection import inspection_schema
 from flask_json_schema import JsonValidationError, JsonSchema
+from flask_mail import Mail, Message
 from database_infractions import DatabaseInfractions
 from database_utilisateur import DatabaseUtilisateur
-from infractions import Infractions
-from utilisateur import Utilisateur
 from demande_inspection import Inspection
-from apscheduler.schedulers.background import BackgroundScheduler
-from urllib.parse import unquote
-from datetime import datetime
-from datetime import datetime, timedelta
-from io import StringIO
-import base64
-import hashlib
-import uuid
-import csv
-from keys import client
+from infractions import Infractions
+from schema_inspection import inspection_schema
+from schema_utilisateur import valider_nouvel_utilisateur, valider_login
+from utilisateur import Utilisateur
 
 app = Flask(__name__, static_url_path="", static_folder="static")
 schema_utilisateur = JsonSchema(app)
 schema_inspection = JsonSchema(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'infractionsmontreal@gmail.com'
-app.config['MAIL_PASSWORD'] = 'ntppawpearajyjpl'
+app.config['MAIL_USERNAME'] = os.getenv('ADRESSE_COURRIEL_EXPEDITEUR')
+app.config['MAIL_PASSWORD'] = os.getenv('MOT_DE_PASSE_EXPEDITEUR')
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
-app.config['DESTINATAIRE_CORRECTION'] = 'destinataire5190@gmail.com'
+app.config['DESTINATAIRE_CORRECTION'] = os.getenv(
+    'ADRESSE_COURRIEL_DESTINATAIRE')
+app.config['CLIENT_TWITTER'] = tweepy.Client(os.getenv('TWITTER_BEARER_TOKEN'),
+                                             os.getenv('TWITTER_API_KEY'),
+                                             os.getenv('TWITTER_API_SECRET'),
+                                             os.getenv('TWITTER_ACCESS_TOKEN'),
+                                             os.getenv(
+                                                 'TWITTER_ACCESS_TOKEN_SECRET')
+                                             )
 mail = Mail(app)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 
@@ -95,7 +102,8 @@ def home():
             return redirect(url_for('index')), 302
         else:
             return render_template('accueil.html',
-                                   message=request.args.get('message', None),
+                                   message_logout=request.args.get(
+                                       'message_logout', None),
                                    nom_page='Infractions Montréal',
                                    infractions=infractions,
                                    etalissements=etalissements), 200
@@ -119,7 +127,7 @@ def publier_tweet(infraction: Infractions):
     contenu_tweet = (f"Nouvelle infraction :\n"
                      f"{infraction.etablissement}, {infraction.adresse}, "
                      f"{infraction.date} : {infraction.montant} $")
-    client.create_tweet(text=contenu_tweet)
+    app.config['CLIENT_TWITTER'].create_tweet(text=contenu_tweet)
 
 
 @app.route('/api/infractions-csv-to-db')
@@ -184,6 +192,7 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(index, 'cron', hour=00, minute=00, second=00)
 scheduler.start()
 
+
 # Cette route permet de rechercher les infractions dans la base de donnees
 # selon le nom de l'etablissement, le proprietaire et la rue. Ensuite elle
 # retourne les resultats dans un tableau dans une page web A2
@@ -192,7 +201,8 @@ scheduler.start()
 @app.route('/api/recherche-infraction', methods=['POST'])
 def recherche():
     try:
-        nom_etablissement = request.form['nomEtablissement']
+        nom_etablissement = request.form[
+            'nomEtabnew FormData(formulaire)lissement']
         proprietaire = request.form['proprietaire']
         rue = request.form['rue']
         infractions = get_db_infractions().recherche_infraction(
@@ -254,7 +264,7 @@ def authentification_requise(f):
             message = "Vous devez d'abord vous authentifier"
             return redirect(url_for('login', message=message), 302)
         return f(*args, **kwargs)
-
+    
     return decorated
 
 
@@ -330,7 +340,7 @@ def traitement_inscription():
             message = f"L'adresse courriel \"{courriel}\" est déjà utilisée"
             code = 200
         return jsonify({"message": message, "code": code}), code
-
+    
     except Exception as e:
         return jsonify(error=f"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
@@ -353,7 +363,7 @@ def profil():
     _etablissements = []
     for id_etablissement in id_etablissements_surveilles:
         nom_etablissement = (get_db_infractions().
-                             get_etablissement_by_id_business(
+        get_etablissement_by_id_business(
             id_etablissement))
         _etablissements.append((id_etablissement, nom_etablissement))
     liste_tous_etablissements = get_db_infractions().get_all_etablissements()
@@ -377,44 +387,53 @@ def profil():
                            liste=liste_tous_etablissements, aide=aide), 200
 
 
-def fichier_valide(filename: str) -> bool:
-    return filename.endswith(".png") or filename.endswith(
-        ".jpg") or filename.endswith(".jpeg")
+def fichier_valide(fichier: werkzeug.datastructures.FileStorage) -> bool:
+    return fichier.content_type in ['image/png', 'image/jpg', 'image/jpeg']
 
 
 @app.route('/api/profil/modifer/<id>', methods=['PUT'])
 @authentification_requise
 def traitement_modifications(id):
-    if get_db_utilisateurs().get_utilisateur(id):
-        nouvelle_photo = False
-        photo = request.files["photo"]
-        _etablissements = request.form["liste_etablissements"]
-        _etablissements = json.loads(_etablissements)
-        if photo.filename != '':
-            if fichier_valide(photo.filename):
+    content_type = request.content_type
+    if (content_type != 'multipart/form-data'
+            or content_type != 'application/x-www-form-urlencoded'):
+        return jsonify({'message': 'Le type de contenu est invalide'}), 400
+    else:
+        if get_db_utilisateurs().get_utilisateur(id):
+            nouvelle_photo = False
+            photo = request.files["photo"]
+            _etablissements = request.form["liste_etablissements"]
+            _etablissements = json.loads(_etablissements)
+            if photo.filename != '':
+                if fichier_valide(photo):
+                    message = "Modifications apportées avec succès"
+                    code = 200
+                    nouvelle_photo = True
+                    get_db_utilisateurs().modifier_utilisateur(id,
+                                                               _etablissements,
+                                                               photo)
+                else:
+                    message = (
+                        f"Erreur lors de la lecture du fichier transmis : "
+                        f"\"{photo.filename}\"")
+                    code = 400
+            else:
                 message = "Modifications apportées avec succès"
                 code = 200
-                nouvelle_photo = True
                 get_db_utilisateurs().modifier_utilisateur(id, _etablissements,
-                                                           photo)
-            else:
-                message = (f"Erreur lors de la lecture du fichier transmis : "
-                           f"\"{photo.filename}\"")
-                code = 400
+                                                           None)
+            return jsonify(
+                {"message": message, "code": code,
+                 "photo": nouvelle_photo}), code
         else:
-            message = "Modifications apportées avec succès"
-            code = 200
-            get_db_utilisateurs().modifier_utilisateur(id, _etablissements,
-                                                       None)
-        return jsonify(
-            {"message": message, "code": code, "photo": nouvelle_photo}), code
-    else:
-        abort(404)
+            abort(404)
 
 
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['GET', 'POST', 'PUT', 'PATCH'])
 def login():
-    return render_template('login.html', nom_page='Authentification'), 200
+    return render_template('login.html',
+                           message=request.args.get('message', None),
+                           nom_page='Authentification'), 200
 
 
 @app.route('/api/login/traitement', methods=['POST'])
@@ -444,7 +463,7 @@ def logout():
     session.pop('id_utilisateur', None)
     get_db_utilisateurs().supprimer_session(id_session)
     message_logout = "Vous avez été déconnecté avec succès"
-    return redirect(url_for('home', message=message_logout),
+    return redirect(url_for('home', message_logout=message_logout),
                     302)
 
 
@@ -581,7 +600,7 @@ def supprimer_etablissement(id_utilisateur: int, token: str,
     if get_db_utilisateurs().verifier_token(id_utilisateur, token,
                                             etablissement):
         etablissements_surveilles = (get_db_utilisateurs().
-                                     get_all_etablissements_surveilles(
+        get_all_etablissements_surveilles(
             id_utilisateur))
         if int(etablissement) in etablissements_surveilles:
             etablissements_surveilles.remove(int(etablissement))
@@ -632,22 +651,23 @@ def infractions_etablissements(format):
         elif format == "csv":
             # Insérer le tuple qui représente les titres des colonnes
             etablissements.insert(0, ("ID", "Nombre d'infractions", "Nom"))
-
+            
             # Créer le contenu CSV
             donnees_csv = io.StringIO()
             csv_writer = csv.writer(donnees_csv)
             csv_writer.writerows(etablissements)
-
+            
             # Créer la réponse avec le contenu CSV
             response = make_response(donnees_csv.getvalue())
-
+            
             # Spécifier l'encodage UTF-8 dans les en-têtes de la réponse
             response.headers['Content-Type'] = 'text/csv; charset=utf-8'
             response.headers[
                 'Content-Disposition'] = 'attachment; filename=infractions.csv'
             return response, 200
         else:
-            abort(404)
+            jsonify({"message": f"Le format \"{format}\" "
+                                f"n'est pas supporté par ce service"}), 400
 
 
 @app.errorhandler(404)
