@@ -3,9 +3,9 @@
 ## Auteurs
 - Mouad Belbey
 - Mohamed Bendourou
+- [Dépot Git](https://gitlab.info.uqam.ca/belbey.mouad/tp2_inf5190.git)
 
 ## Prérequis
-
 `pip install -r requirements.txt`
 
 ## Lancer l'application
