@@ -394,9 +394,9 @@ def fichier_valide(fichier: werkzeug.datastructures.FileStorage) -> bool:
 @app.route('/api/profil/modifer/<id>', methods=['PUT'])
 @authentification_requise
 def traitement_modifications(id):
-    content_type = request.content_type
+    content_type = request.content_type.split(';')[0]
     if (content_type != 'multipart/form-data'
-            or content_type != 'application/x-www-form-urlencoded'):
+            and content_type != 'application/x-www-form-urlencoded'):
         return jsonify({'message': 'Le type de contenu est invalide'}), 400
     else:
         if get_db_utilisateurs().get_utilisateur(id):
