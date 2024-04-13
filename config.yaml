@@ -1,0 +1,11 @@
+# Informations de connexion à la boîte courriel du destinataire
+destinataire:
+  courriel: "destinataire5190@gmail.com"
+  mot_de_passe: "xDestinataire5190-"
+
+# Liste des utilisateurs du site web
+utilisateurs:
+  - courriel: "bendourou.mohamed@courrier.uqam.ca"
+    mot_de_passe: "Poulet420!"
+  - courriel: "destinataire5190@gmail.com"
+    mot_de_passe: "xDestinataire5190-"
