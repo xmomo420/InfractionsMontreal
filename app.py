@@ -120,10 +120,7 @@ def envoyer_courriel(infractions: List[Infractions]):
     message.html = render_template('courriels/courriel_infractions.html',
                                    nom_complet=nom_complet,
                                    infractions=infractions)
-    try:
-        mail.send(message)
-    except SMTPException as e:
-        print(f"Erreur lors de l'envoi du courriel : {str(e)}")
+    mail.send(message)
 
 
 def publier_tweet(infraction: Infractions):
@@ -180,29 +177,37 @@ def index():
                     ).get_courriels_by_business_id(infraction.id_business)
                     if base_donnees_vide is False:
                         if len(destinataires) > 0:
-                            envoyer_courriel_etablissement(destinataires,
-                                                           infraction)
-                if len(liste_infractions) > 0:
-                    code = 201
-                    # Pour ne pas surcharger la boîte de réception du courriel
-                    if base_donnees_vide is False:
+                            try:
+                                envoyer_courriel_etablissement(destinataires,
+                                                               infraction)
+                            except SMTPException as e:
+                                # print(f"Erreur courriel : {str(e)}")
+                                pass
+            if len(liste_infractions) > 0:
+                code = 201
+                # Pour ne pas surcharger la boîte de réception du courriel
+                if base_donnees_vide is False:
+                    try:
                         envoyer_courriel(liste_infractions)
-                    message = (f"La base de données a été mise à jour avec "
-                               f"succès !\n"
-                               f"{len(liste_infractions)} nouvelle(s) "
-                               f"infraction(s) ont été rajoutée(s)")
-                else:
-                    # Code 200, car aucune nouvelles rangées ont été insérées
-                    code = 200
-                    message = 'La base de données est déjà à jour'
+                    except SMTPException as e:
+                        # print(f"Erreur courriel : {str(e)}")
+                        pass
+                message = (f"La base de données a été mise à jour avec "
+                           f"succès !\n"
+                           f"{len(liste_infractions)} nouvelle(s) "
+                           f"infraction(s) ont été rajoutée(s)")
+            else:
+                # Code 200, car aucune nouvelles rangées ont été insérées
+                code = 200
+                message = 'La base de données est déjà à jour'
             # Pour éviter l'erreur 429 (Twitter)
             if base_donnees_vide is False:
                 for infraction in liste_infractions:
                     try:  # Gérer le cas d'un tweet qui rate
                         publier_tweet(infraction)
                     except tweepy.TweepyException as e:
-                        # print(f"Erreur Twitter : {str(e)}")
-                        pass
+                        print(f"Erreur Twitter : {str(e)}")
+                        break
             return message, code
         except Exception as e:
             return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
@@ -235,9 +240,11 @@ def recherche():
                 nom_etablissement,
                 proprietaire, rue)
             if nom_etablissement == '' and proprietaire == '' and rue == '':
-                return render_template('recherche.html', error='Veuillez entrer un nom d\'établissement, un propriétaire ou '
-                    'une rue'), 400
-            return render_template('infraction.html', infractions=infractions), 200
+                return render_template('recherche.html',
+                                       error='Veuillez entrer un nom d\'établissement, un propriétaire ou '
+                                             'une rue'), 400
+            return render_template('infraction.html',
+                                   infractions=infractions), 200
     except Exception as e:
         return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
@@ -571,11 +578,15 @@ def envoyer_courriel_etablissement(destinataires: list,
                                        id_utilisateur=id_utilisateur,
                                        token=token,
                                        etablissement=infraction.id_business)
-        mail.send(message)
-        # Supprimer le token après 1 semaine
-        moment_expiration = datetime.now() + timedelta(days=7)
-        scheduler.add_job(supprimer_token, 'date', run_date=moment_expiration,
-                          args=[token])
+        try:
+            mail.send(message)
+            # Supprimer le token après 1 semaine
+            moment_expiration = datetime.now() + timedelta(days=7)
+            scheduler.add_job(supprimer_token, 'date',
+                              run_date=moment_expiration,
+                              args=[token])
+        except SMTPException as e:
+            break
 
 
 @app.route('/confirmer-suppression/<id_utilisateur>&<token>&<etablissement>')
