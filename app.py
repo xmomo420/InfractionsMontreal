@@ -10,8 +10,10 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from functools import wraps
 from io import StringIO
+from smtplib import SMTPException
 from typing import List
 from urllib.parse import unquote
+from urllib import request, error
 import requests
 import tweepy
 import werkzeug.datastructures
@@ -96,14 +98,15 @@ def close_connection(exception):
 @app.route('/')
 def home():
     try:
+        # supprimer_tous_les_tweets()
         infractions = get_db_infractions().get_infractions()
         etalissements = get_db_infractions().get_all_etablissements()
         return render_template('accueil.html',
-                                message_logout=request.args.get(
-                                    'message_logout', None),
-                                nom_page='Infractions Montréal',
-                                infractions=infractions,
-                                etalissements=etalissements), 200
+                               message_logout=request.args.get(
+                                   'message_logout', None),
+                               nom_page='Infractions Montréal',
+                               infractions=infractions,
+                               etalissements=etalissements), 200
     except Exception as e:
         return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
@@ -117,7 +120,10 @@ def envoyer_courriel(infractions: List[Infractions]):
     message.html = render_template('courriels/courriel_infractions.html',
                                    nom_complet=nom_complet,
                                    infractions=infractions)
-    mail.send(message)
+    try:
+        mail.send(message)
+    except SMTPException as e:
+        print(f"Erreur lors de l'envoi du courriel : {str(e)}")
 
 
 def publier_tweet(infraction: Infractions):
@@ -127,8 +133,21 @@ def publier_tweet(infraction: Infractions):
     app.config['CLIENT_TWITTER'].create_tweet(text=contenu_tweet)
 
 
+def supprimer_tous_les_tweets() -> bool:
+    try:
+        tweets = app.config['CLIENT_TWITTER'].get_users_tweets(
+            os.getenv('TWITTER_CLIENT_ID'))
+        for tweet in tweets:
+            app.config['CLIENT_TWITTER'].delete_tweet(tweet['id'])
+        return True
+    except tweepy.TweepyException as e:
+        # print(f"Erreur Twitter : {str(e)}")
+        return False
+
+
 @app.route('/api/infractions-csv-to-db')
 def index():
+    base_donnees_vide = get_db_infractions().infractions_empty()
     # Pour gérer le problème des connections simultanées dans la BD
     # Envelopper le code dans un contexte d'application Flask
     with (app.app_context()):
@@ -159,25 +178,31 @@ def index():
                     liste_infractions.append(infraction)
                     destinataires = get_db_utilisateurs(
                     ).get_courriels_by_business_id(infraction.id_business)
-                    if len(destinataires) > 0:
-                        envoyer_courriel_etablissement(destinataires,
-                                                       infraction)
-            if len(liste_infractions) > 0:
-                code = 201
-                envoyer_courriel(liste_infractions)
-                message = (f"La base de données a été mise à jour avec "
-                           f"succès !\n"
-                           f"{len(liste_infractions)} nouvelle(s) "
-                           f"infraction(s) ont été rajoutée(s)")
-            else:
-                # Code 200, car aucune nouvelles rangées ont été insérées
-                code = 200
-                message = 'La base de données est déjà à jour'
-            for infraction in liste_infractions:
-                try:  # Gérer le cas d'un tweet qui rate
-                    publier_tweet(infraction)
-                except tweepy.TweepyException as e:
-                    print(str(e))
+                    if base_donnees_vide is False:
+                        if len(destinataires) > 0:
+                            envoyer_courriel_etablissement(destinataires,
+                                                           infraction)
+                if len(liste_infractions) > 0:
+                    code = 201
+                    # Pour ne pas surcharger la boîte de réception du courriel
+                    if base_donnees_vide is False:
+                        envoyer_courriel(liste_infractions)
+                    message = (f"La base de données a été mise à jour avec "
+                               f"succès !\n"
+                               f"{len(liste_infractions)} nouvelle(s) "
+                               f"infraction(s) ont été rajoutée(s)")
+                else:
+                    # Code 200, car aucune nouvelles rangées ont été insérées
+                    code = 200
+                    message = 'La base de données est déjà à jour'
+            # Pour éviter l'erreur 429 (Twitter)
+            if base_donnees_vide is False:
+                for infraction in liste_infractions:
+                    try:  # Gérer le cas d'un tweet qui rate
+                        publier_tweet(infraction)
+                    except tweepy.TweepyException as e:
+                        # print(f"Erreur Twitter : {str(e)}")
+                        pass
             return message, code
         except Exception as e:
             return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
@@ -261,7 +286,7 @@ def authentification_requise(f):
             message = "Vous devez d'abord vous authentifier"
             return redirect(url_for('login', message=message), 302)
         return f(*args, **kwargs)
-
+    
     return decorated
 
 
@@ -337,7 +362,7 @@ def traitement_inscription():
             message = f"L'adresse courriel \"{courriel}\" est déjà utilisée"
             code = 200
         return jsonify({"message": message, "code": code}), code
-
+    
     except Exception as e:
         return jsonify(error=f"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
@@ -648,15 +673,15 @@ def infractions_etablissements(format):
         elif format == "csv":
             # Insérer le tuple qui représente les titres des colonnes
             etablissements.insert(0, ("ID", "Nombre d'infractions", "Nom"))
-
+            
             # Créer le contenu CSV
             donnees_csv = io.StringIO()
             csv_writer = csv.writer(donnees_csv)
             csv_writer.writerows(etablissements)
-
+            
             # Créer la réponse avec le contenu CSV
             response = make_response(donnees_csv.getvalue())
-
+            
             # Spécifier l'encodage UTF-8 dans les en-têtes de la réponse
             response.headers['Content-Type'] = 'text/csv; charset=utf-8'
             response.headers[
@@ -687,5 +712,6 @@ def access_denied(error):
 
 @app.errorhandler(500)
 def servor_error(error):
-    return render_template('erreur.html', message_erreur=f"{MESSAGE_ERREUR_500} : {str(error)}",
+    return render_template('erreur.html',
+                           message_erreur=f"{MESSAGE_ERREUR_500} : {str(error)}",
                            titre="Erreur 500", nom_page=f"{str(error)}"), 500

@@ -155,3 +155,10 @@ class DatabaseInfractions:
             "WHERE etablissement = ?",
             (nouveau_nom, etablissement))
         self.get_connection().commit()
+    
+    def infractions_empty(self) -> bool:
+        cursor = self.get_connection().cursor()
+        cursor.execute("SELECT * FROM infractions")
+        infractions_data = cursor.fetchall()
+        return len(infractions_data) == 0
+        
