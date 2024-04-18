@@ -264,7 +264,7 @@ def authentification_requise(f):
             message = "Vous devez d'abord vous authentifier"
             return redirect(url_for('login', message=message), 302)
         return f(*args, **kwargs)
-    
+
     return decorated
 
 
@@ -340,7 +340,7 @@ def traitement_inscription():
             message = f"L'adresse courriel \"{courriel}\" est déjà utilisée"
             code = 200
         return jsonify({"message": message, "code": code}), code
-    
+
     except Exception as e:
         return jsonify(error=f"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
@@ -651,15 +651,15 @@ def infractions_etablissements(format):
         elif format == "csv":
             # Insérer le tuple qui représente les titres des colonnes
             etablissements.insert(0, ("ID", "Nombre d'infractions", "Nom"))
-            
+
             # Créer le contenu CSV
             donnees_csv = io.StringIO()
             csv_writer = csv.writer(donnees_csv)
             csv_writer.writerows(etablissements)
-            
+
             # Créer la réponse avec le contenu CSV
             response = make_response(donnees_csv.getvalue())
-            
+
             # Spécifier l'encodage UTF-8 dans les en-têtes de la réponse
             response.headers['Content-Type'] = 'text/csv; charset=utf-8'
             response.headers[
@@ -686,3 +686,9 @@ def method_not_allowed(error):
 def access_denied(error):
     return render_template('erreur.html', message_erreur=MESSAGE_ERREUR_403,
                            titre="Erreur 403", nom_page=f"{str(error)}"), 403
+
+
+@app.errorhandler(500)
+def servor_error(error):
+    return render_template('erreur.html', message_erreur=f"{MESSAGE_ERREUR_500} : {str(error)}",
+                           titre="Erreur 500", nom_page=f"{str(error)}"), 500
