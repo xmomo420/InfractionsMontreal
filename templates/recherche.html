@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+    <div class="recherche container">
+        <h3 class="text-center">Recherche d'une infraction</h3>
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+        <form action="{{ url_for('recherche') }}" method="post">
+            <label for="nom-etablissement">Nom de l'établissement</label>
+            <input type="text" class="form-control" id="nom-etablissement" name="nomEtablissement">
+            <label for="proprietaire">Propriétéaire</label>
+            <input type="text" class="form-control" id="proprietaire" name="proprietaire">
+            <label for="rue">Rue</label>
+            <input type="text" class="form-control" id="rue" name="rue">
+            <button type="submit" class="btn btn-outline-primary mt-3">Rechercher</button>
+        </form>
+    </div>
+
+{% endblock %}
