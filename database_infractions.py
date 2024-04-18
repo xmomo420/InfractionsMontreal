@@ -11,11 +11,11 @@ class DatabaseInfractions:
         if self.connection is None:
             self.connection = sqlite3.connect('db/infractions.db')
         return self.connection
-
+    
     def disconnect(self):
         if self.connection is not None:
             self.connection.close()
-
+    
     # Retourne true si l'infraction n'existait pas
     def creer_infraction(self, infraction) -> bool:
         cursor = self.get_connection().cursor()
@@ -42,7 +42,7 @@ class DatabaseInfractions:
         self.get_connection().commit()
         # L'infraction existait déjà
         return cursor.lastrowid == int(infraction.id_poursuite)
-
+    
     def get_infractions(self):
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT * FROM infractions")
@@ -50,7 +50,7 @@ class DatabaseInfractions:
         infractions = [Infractions(*infraction)
                        for infraction in infractions_data]
         return infractions
-
+    
     def recherche_infraction(self, nomEtablissement, proprietaire, rue):
         cursor = self.get_connection().cursor()
         cursor.execute(
@@ -62,7 +62,7 @@ class DatabaseInfractions:
         infractions = [Infractions(*infraction)
                        for infraction in infractions_data]
         return infractions
-
+    
     def get_infraction_by_date(self, date_debut, date_fin):
         cursor = self.get_connection().cursor()
         cursor.execute(
@@ -72,7 +72,7 @@ class DatabaseInfractions:
         infractions = [Infractions(*infraction)
                        for infraction in infractions_data]
         return infractions
-
+    
     def get_infraction_by_id_business(self, id_business):
         cursor = self.get_connection().cursor()
         cursor.execute(
@@ -82,7 +82,7 @@ class DatabaseInfractions:
         infractions = [Infractions(*infraction)
                        for infraction in infractions_data]
         return infractions
-
+    
     def get_all_etablissements(self) -> list:
         cursor = self.get_connection().cursor()
         cursor.execute(
@@ -90,7 +90,7 @@ class DatabaseInfractions:
             "ORDER BY etablissement COLLATE NOCASE")
         donnees = cursor.fetchall()
         return donnees
-
+    
     def get_etablissement_by_id_business(self, id_business) -> str:
         cursor = self.get_connection().cursor()
         cursor.execute(
@@ -98,7 +98,7 @@ class DatabaseInfractions:
             "WHERE id_business == ?", (id_business,))
         donnees = cursor.fetchone()
         return donnees[0]
-
+    
     def inserer_plainte(self, plainte):
         cursor = self.get_connection().cursor()
         cursor.execute(
@@ -117,20 +117,20 @@ class DatabaseInfractions:
         result = cursor.fetchall()
         plainte.id = result[0][0]
         return plainte
-
+    
     def supprimer_inspection(self, id_inspection):
         cursor = self.get_connection().cursor()
         cursor.execute(
             "DELETE FROM Demande_inspection WHERE id = ?", (id_inspection,))
         self.get_connection().commit()
-
+    
     def supprimer_etablissement(self, etablissement):
         cursor = self.get_connection().cursor()
         cursor.execute(
             "DELETE FROM infractions WHERE etablissement = ?",
             (etablissement,))
         self.get_connection().commit()
-
+    
     def get_adresse_ville_etablissement(self, id_business) -> tuple:
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT etablissement, adresse, ville "
@@ -138,7 +138,7 @@ class DatabaseInfractions:
                        (id_business,))
         donnees = cursor.fetchone()
         return donnees
-
+    
     def get_infractions_etablissement(self) -> list or None:
         cursor = self.get_connection().cursor()
         cursor.execute("SELECT id_business, COUNT(*) AS occurences, "
@@ -147,7 +147,7 @@ class DatabaseInfractions:
                        " ORDER BY occurences DESC")
         donnees = cursor.fetchall()
         return donnees if len(donnees) > 0 else None
-
+    
     def modifier_etablissement(self, etablissement, nouveau_nom):
         cursor = self.get_connection().cursor()
         cursor.execute(
@@ -161,4 +161,3 @@ class DatabaseInfractions:
         cursor.execute("SELECT * FROM infractions")
         infractions_data = cursor.fetchall()
         return len(infractions_data) == 0
-        

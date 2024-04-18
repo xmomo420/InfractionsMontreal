@@ -10,12 +10,6 @@ colorama==0.4.6
 Flask==3.0.2
 Flask-json-schema==0.0.5
 Flask-Mail==0.9.1
-google-api-core==2.18.0
-google-api-python-client==2.123.0
-google-auth==2.29.0
-google-auth-httplib2==0.2.0
-googleapis-common-protos==1.63.0
-gunicorn==21.2.0
 httplib2==0.22.0
 idna==3.6
 itsdangerous==2.1.2

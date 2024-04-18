@@ -241,8 +241,10 @@ def recherche():
                 proprietaire, rue)
             if nom_etablissement == '' and proprietaire == '' and rue == '':
                 return render_template('recherche.html',
-                                       error='Veuillez entrer un nom d\'établissement, un propriétaire ou '
-                                             'une rue'), 400
+                                       error='Veuillez entrer un nom '
+                                             'd\'établissement, '
+                                             'un propriétaire ou'
+                                             ' une rue'), 400
             return render_template('infraction.html',
                                    infractions=infractions), 200
     except Exception as e:
@@ -294,7 +296,6 @@ def authentification_requise(f):
             message = "Vous devez d'abord vous authentifier"
             return redirect(url_for('login', message=message), 302)
         return f(*args, **kwargs)
-    
     return decorated
 
 
@@ -370,7 +371,6 @@ def traitement_inscription():
             message = f"L'adresse courriel \"{courriel}\" est déjà utilisée"
             code = 200
         return jsonify({"message": message, "code": code}), code
-    
     except Exception as e:
         return jsonify(error=f"{MESSAGE_ERREUR_500} : {str(e)}"), 500
 
@@ -393,8 +393,8 @@ def profil():
     _etablissements = []
     for id_etablissement in id_etablissements_surveilles:
         nom_etablissement = (get_db_infractions().
-        get_etablissement_by_id_business(
-            id_etablissement))
+                             get_etablissement_by_id_business(
+                id_etablissement))
         _etablissements.append((id_etablissement, nom_etablissement))
     liste_tous_etablissements = get_db_infractions().get_all_etablissements()
     photo = utilisateur_connecte.photo
@@ -634,7 +634,7 @@ def supprimer_etablissement(id_utilisateur: int, token: str,
     if get_db_utilisateurs().verifier_token(id_utilisateur, token,
                                             etablissement):
         etablissements_surveilles = (get_db_utilisateurs().
-        get_all_etablissements_surveilles(
+                                     get_all_etablissements_surveilles(
             id_utilisateur))
         if int(etablissement) in etablissements_surveilles:
             etablissements_surveilles.remove(int(etablissement))
@@ -685,15 +685,12 @@ def infractions_etablissements(format):
         elif format == "csv":
             # Insérer le tuple qui représente les titres des colonnes
             etablissements.insert(0, ("ID", "Nombre d'infractions", "Nom"))
-            
             # Créer le contenu CSV
             donnees_csv = io.StringIO()
             csv_writer = csv.writer(donnees_csv)
             csv_writer.writerows(etablissements)
-            
             # Créer la réponse avec le contenu CSV
             response = make_response(donnees_csv.getvalue())
-            
             # Spécifier l'encodage UTF-8 dans les en-têtes de la réponse
             response.headers['Content-Type'] = 'text/csv; charset=utf-8'
             response.headers[
@@ -725,5 +722,6 @@ def access_denied(error):
 @app.errorhandler(500)
 def servor_error(error):
     return render_template('erreur.html',
-                           message_erreur=f"{MESSAGE_ERREUR_500} : {str(error)}",
+                           message_erreur=f"{MESSAGE_ERREUR_500} : "
+                                          f"{str(error)}",
                            titre="Erreur 500", nom_page=f"{str(error)}"), 500
