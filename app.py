@@ -188,6 +188,7 @@ def index():
 scheduler = BackgroundScheduler()
 scheduler.add_job(index, 'cron', hour=00, minute=00, second=00)
 scheduler.start()
+print('Scheduler started')
 
 
 # Cette route permet de rechercher les infractions dans la base de donnees
@@ -195,23 +196,23 @@ scheduler.start()
 # retourne les resultats dans un tableau dans une page web A2
 
 
-@app.route('/api/recherche-infraction', methods=['POST'])
+@app.route('/recherche-infraction', methods=['POST', 'GET'])
 def recherche():
     try:
-        nom_etablissement = request.form[
-            'nomEtabnew FormData(formulaire)lissement']
-        proprietaire = request.form['proprietaire']
-        rue = request.form['rue']
-        infractions = get_db_infractions().recherche_infraction(
-            nom_etablissement,
-            proprietaire, rue)
-        if nom_etablissement == '' or proprietaire == '' or rue == '':
-            return (
-                'Veuillez entrer un nom d\'établissement, un propriétaire ou '
-                'une rue'), 400
-        if len(infractions) == 0:
-            return 'Aucune infraction trouvée', 404
-        return render_template('infraction.html', infractions=infractions), 200
+        if request.method == 'GET':
+            return render_template('recherche.html',
+                                   nom_page='Rechercher'), 200
+        elif request.method == 'POST':
+            nom_etablissement = request.form['nomEtablissement']
+            proprietaire = request.form['proprietaire']
+            rue = request.form['rue']
+            infractions = get_db_infractions().recherche_infraction(
+                nom_etablissement,
+                proprietaire, rue)
+            if nom_etablissement == '' and proprietaire == '' and rue == '':
+                return render_template('recherche.html', error='Veuillez entrer un nom d\'établissement, un propriétaire ou '
+                    'une rue'), 400
+            return render_template('infraction.html', infractions=infractions), 200
     except Exception as e:
         return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
