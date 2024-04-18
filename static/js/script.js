@@ -212,6 +212,12 @@ $(document).ready(function() {
         let prenom = $('#prenom_client').val();
         let description = $('#description_probleme').val();
 
+        if (!etablissement || !adresse || !ville || !date_visite || !nom || !prenom || !description) {
+            $('#message').html('Veuillez remplir tous les champs');
+            $('#message').addClass('alert alert-danger');
+            return;
+        }
+
         let json = {
             etablissement: etablissement,
             adresse: adresse,
@@ -234,6 +240,7 @@ $(document).ready(function() {
         .then(data => {
             if (data) {
                 $('#message').html('Demande envoyée avec succès');
+                $('#message').removeClass('alert alert-danger');
                 $('#message').addClass('alert alert-success');
                 // Réinitialiser les champs du formulaire
                 $('#etablissement').val('');
