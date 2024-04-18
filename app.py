@@ -98,15 +98,12 @@ def home():
     try:
         infractions = get_db_infractions().get_infractions()
         etalissements = get_db_infractions().get_all_etablissements()
-        if len(infractions) == 0:
-            return redirect(url_for('index')), 302
-        else:
-            return render_template('accueil.html',
-                                   message_logout=request.args.get(
-                                       'message_logout', None),
-                                   nom_page='Infractions Montréal',
-                                   infractions=infractions,
-                                   etalissements=etalissements), 200
+        return render_template('accueil.html',
+                                message_logout=request.args.get(
+                                    'message_logout', None),
+                                nom_page='Infractions Montréal',
+                                infractions=infractions,
+                                etalissements=etalissements), 200
     except Exception as e:
         return f'{MESSAGE_ERREUR_500} : {str(e)}', 500
 
